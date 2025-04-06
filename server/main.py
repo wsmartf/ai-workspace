@@ -1,7 +1,10 @@
-# backend/main.py
+from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from ai import ChatRequest, chat_completion, edit_document
+from ai import chat_completion, edit_document
+from fastapi import Body
+from memory import add_memory_item
+from structs import ChatRequest
 
 app = FastAPI()
 
@@ -21,3 +24,12 @@ async def chat(req: ChatRequest):
 @app.post("/edit")
 async def edit(req: ChatRequest):
     return await edit_document(req)
+
+@app.post("/memory/add")
+async def add_to_memory(
+    title: str = Body(...),
+    content: str = Body(...),
+    tags: List[str] = Body(default=[])
+):
+    item = add_memory_item(title, content, tags)
+    return { "status": "ok", "item": item }

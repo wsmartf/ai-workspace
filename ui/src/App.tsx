@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { readTextFile, writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
-
-interface ChatMessage {
-  role: string;
-  content: string;
-}
+import MemoryPrompt from "./components/MemoryPrompt";
+import { ChatMessage } from "./types/Chat";
 
 function App() {
   const [doc, setDoc] = useState<string>('');
   const [chat, setChat] = useState<ChatMessage[]>([{ role: 'system', content: 'How can I help you think today?' }]);
+  const [savingChat, setSavingChat] = useState<ChatMessage | null>(null);
+
 
   async function loadDocument() {
     try {
@@ -31,6 +30,24 @@ function App() {
       console.error('Error saving doc:', err);
     }
   }
+
+  async function saveMemory(title: string, message: ChatMessage) {
+    const content = `Role: ${message.role}\nContent: ${message.content}`;
+
+    await fetch("http://localhost:11434/memory/add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        content: content,
+        tags: []
+      }),
+    });
+
+    setSavingChat(null);
+    alert("Saved to memory!");
+  }
+
 
   function isValidChat(messages: ChatMessage[]): boolean {
     return messages.every((message) => message.role && message.content);
@@ -99,17 +116,36 @@ function App() {
 
   function renderChatMessages() {
     return chat.map((m, i) => (
-      <div key={i} style={{ marginBottom: '1rem' }}>
-        <strong>{m.role}</strong>: {m.content}
+      <div key={i} style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
+        <div style={{ flex: 1 }}>
+          <strong>{m.role}</strong>: {m.content}
+        </div>
+        <button
+          onClick={() => setSavingChat(m)}
+        >
+          💾
+        </button>
       </div>
     ));
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif' }}>
-      <MarkdownEditor doc={doc} setDoc={setDoc} loadDocument={loadDocument} saveDocument={saveDocument} />
-      <ChatPanel chat={chat} renderChatMessages={renderChatMessages} sendMessage={sendMessage} />
-    </div>
+    <>
+      <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif' }}>
+        <MarkdownEditor doc={doc} setDoc={setDoc} loadDocument={loadDocument} saveDocument={saveDocument} />
+        <ChatPanel chat={chat} renderChatMessages={renderChatMessages} sendMessage={sendMessage} />
+      </div>
+
+      {savingChat && (
+        <MemoryPrompt
+          message={savingChat}
+          onSubmit={saveMemory}
+          onCancel={() => setSavingChat(null)}
+        />
+      )}
+    
+    </>
+    
   );
 }
 
@@ -148,7 +184,6 @@ function MarkdownEditor({
 }
 
 function ChatPanel({
-  chat,
   renderChatMessages,
   sendMessage,
 }: {
