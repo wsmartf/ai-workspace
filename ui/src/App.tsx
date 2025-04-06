@@ -143,9 +143,9 @@ function App() {
           onCancel={() => setSavingChat(null)}
         />
       )}
-    
+
     </>
-    
+
   );
 }
 
@@ -205,7 +205,7 @@ function ChatPanel({
           e.currentTarget.reset();
         }}
       >
-        <input name="msg" placeholder="Type a message..." style={{ width: '100%' }} />
+        <input name="msg" placeholder="Type a message..." style={{ width: '100%', padding: '0.5rem' }} />
       </form>
     </div>
   );
