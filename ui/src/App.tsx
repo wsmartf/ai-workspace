@@ -1,13 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { readTextFile, writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
+import { exists } from '@tauri-apps/plugin-fs';
 import MemoryPrompt from "./components/MemoryPrompt";
 import { ChatMessage } from "./types/Chat";
+import { MarkdownEditor } from './components/MarkdownEditor';
+import { ChatPanel } from './ChatPanel';
+import ThreadSidebar from './components/ThreadSidebar';
+import { saveMessagesToDisk, loadMessagesFromDisk } from './utils/threads';
+
+interface Thread {
+  id: string;
+  title: string;
+}
 
 function App() {
   const [doc, setDoc] = useState<string>('');
-  const [chat, setChat] = useState<ChatMessage[]>([{ role: 'system', content: 'How can I help you think today?' }]);
+  const [messages, setMessages] = useState<ChatMessage[]>([{ role: 'system', content: 'How can I help you think today?' }]);
   const [savingChat, setSavingChat] = useState<ChatMessage | null>(null);
 
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [activeThreadId, setActiveThreadId] = useState("thread-1");
+
+  useEffect(() => {
+    loadThreadsFromDisk().then((loaded) => {
+      if (loaded.length > 0) {
+        setThreads(loaded);
+        setActiveThreadId(loaded[0].id);
+      }
+    });
+  }, []);
 
   async function loadDocument() {
     try {
@@ -61,12 +82,12 @@ function App() {
     if (input.trim() === '') return;
 
     const isEditCommand = input.trim().startsWith('/edit');
-    const newChat = [...chat, { role: "user", content: input }];
-    setChat([...newChat, { role: "assistant", content: "..." }]);
+    const newChat = [...messages, { role: "user", content: input }];
+    setMessages([...newChat, { role: "assistant", content: "..." }]);
 
-    if (!isValidChat(chat)) {
+    if (!isValidChat(messages)) {
       console.error('Invalid chat format. Removing invalid messages.');
-      setChat(sanitizeChat(chat));
+      setMessages(sanitizeChat(messages));
     }
 
     const endpoint = isEditCommand ? "/edit" : "/chat";
@@ -80,7 +101,11 @@ function App() {
       }
     } catch (err) {
       console.error("GPT error", err);
-      setChat([...newChat, { role: "assistant", content: "[error calling GPT]" }]);
+      setMessages([...newChat, { role: "assistant", content: "[error calling GPT]" }]);
+    }
+
+    if (activeThreadId) {
+      await saveMessagesToDisk(activeThreadId, messages);
     }
   }
 
@@ -102,7 +127,7 @@ function App() {
       console.error("Invalid edit response");
       return;
     }
-    setChat([...newChat, { role: "assistant", content: data.edit_summary }]);
+    setMessages([...newChat, { role: "assistant", content: data.edit_summary }]);
     setDoc(data.updated_doc);
   }
 
@@ -111,11 +136,11 @@ function App() {
       console.error("Invalid chat response");
       return;
     }
-    setChat([...newChat, { role: "assistant", content: data.reply }]);
+    setMessages([...newChat, { role: "assistant", content: data.reply }]);
   }
 
   function renderChatMessages() {
-    return chat.map((m, i) => (
+    return messages.map((m, i) => (
       <div key={i} style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
         <div style={{ flex: 1 }}>
           <strong>{m.role}</strong>: {m.content}
@@ -129,11 +154,50 @@ function App() {
     ));
   }
 
+  async function loadThreadsFromDisk(): Promise<{ id: string; title: string }[]> {
+    const path = "Documents/Home/ai-workspace/data/threads.json";
+    const fileExists = await exists(path, {
+      baseDir: BaseDirectory.Home,
+    });
+    if (!fileExists) return [];
+  
+    const raw = await readTextFile(path, { baseDir: BaseDirectory.Home });
+    return JSON.parse(raw);
+  }
+
+  async function saveThreadsToDisk(threads: { id: string; title: string }[]) {
+    await writeTextFile("Documents/Home/ai-workspace/data/threads.json", JSON.stringify(threads, null, 2), {
+      baseDir: BaseDirectory.Home,
+    });
+  }
+
   return (
     <>
       <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif' }}>
+        <ThreadSidebar
+          threads={threads}
+          activeThreadId={activeThreadId}
+          onSelect={async (id) => {
+            // Save current messages
+            if (activeThreadId) await saveMessagesToDisk(activeThreadId, messages);
+          
+            // Load new thread's messages
+            const loaded = await loadMessagesFromDisk(id);
+            setMessages(loaded);
+            setActiveThreadId(id);
+          }}
+          onNewThread={async () => {
+            const newId = `thread-${threads.length + 1}`;
+            const newThread = { id: newId, title: `Thread ${threads.length + 1}` };
+            const updated = [...threads, newThread];
+            setThreads(updated);
+            setActiveThreadId(newId);
+            setMessages([{ role: 'system', content: 'How can I help you think today?' }]);
+            await saveThreadsToDisk(updated);
+          }}
+        />
         <MarkdownEditor doc={doc} setDoc={setDoc} loadDocument={loadDocument} saveDocument={saveDocument} />
-        <ChatPanel chat={chat} renderChatMessages={renderChatMessages} sendMessage={sendMessage} />
+        <ChatPanel chat={messages} renderChatMessages={renderChatMessages} sendMessage={sendMessage} />
       </div>
 
       {savingChat && (
@@ -146,68 +210,6 @@ function App() {
 
     </>
 
-  );
-}
-
-function MarkdownEditor({
-  doc,
-  setDoc,
-  loadDocument,
-  saveDocument,
-}: {
-  doc: string;
-  setDoc: React.Dispatch<React.SetStateAction<string>>;
-  loadDocument: () => Promise<void>;
-  saveDocument: () => Promise<void>;
-}) {
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '0.5rem', borderBottom: '1px solid #ccc' }}>
-        <button onClick={loadDocument} style={{ marginRight: '0.5rem' }}>📂 Load</button>
-        <button onClick={saveDocument}>💾 Save</button>
-      </div>
-      <textarea
-        value={doc}
-        onChange={(e) => setDoc(e.target.value)}
-        placeholder="Write your doc here..."
-        style={{
-          flex: 1,
-          padding: '1rem',
-          fontFamily: 'monospace',
-          border: 'none',
-          outline: 'none',
-          resize: 'none',
-        }}
-      />
-    </div>
-  );
-}
-
-function ChatPanel({
-  renderChatMessages,
-  sendMessage,
-}: {
-  chat: ChatMessage[];
-  renderChatMessages: () => JSX.Element[];
-  sendMessage: (input: string) => Promise<void>;
-}) {
-  return (
-    <div style={{ flex: 1, borderLeft: '1px solid #ccc', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flex: 1, padding: '1rem', overflowY: 'auto' }}>
-        {renderChatMessages()}
-      </div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const input = (e.currentTarget.elements.namedItem('msg') as HTMLInputElement).value;
-          if (!input) return;
-          sendMessage(input);
-          e.currentTarget.reset();
-        }}
-      >
-        <input name="msg" placeholder="Type a message..." style={{ width: '100%', padding: '0.5rem' }} />
-      </form>
-    </div>
   );
 }
 

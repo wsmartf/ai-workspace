@@ -1,4 +1,3 @@
-// components/MemoryPrompt.tsx
 import React from "react";
 import { ChatMessage } from "../types/Chat";
 
