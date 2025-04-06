@@ -1,6 +1,8 @@
-from openai import OpenAI
+import asyncio
+from openai import AsyncOpenAI
+from openai.types.chat.chat_completion import ChatCompletion, ChatCompletionMessage
 from pydantic import BaseModel
-client = OpenAI()
+client = AsyncOpenAI()
 
 
 class Message(BaseModel):
@@ -9,21 +11,35 @@ class Message(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[Message]
+    document: str
 
 
-def prompt(req: ChatRequest):
-    response = client.responses.create(
+async def chat_completion(req: ChatRequest):
+    # Prepend the document as context to the conversation
+    document_context = f"The following document is provided for context:\n{req.document}\n\n"
+    messages_with_context = [
+        Message(role="system", content=document_context)
+    ] + req.messages
+
+    chat_completion: ChatCompletion = await client.chat.completions.create(
         model="gpt-4o-mini",
-        input=req.messages,
+        messages=messages_with_context,
         temperature=1,
-        max_output_tokens=1000,
+        max_completion_tokens=1000,
         top_p=1,
         store=True,
     )
-    return response.output_text
+    # Extract the response from the chat completion
+    msg: ChatCompletionMessage = chat_completion.choices[0].message
+    return msg.content
 
 
 if __name__ == "__main__":
-    user_input = "What is the capital of France?"
-    response = prompt(user_input)
+    user_input = "What is my name?"
+    document = "This is a document about the user. His name is Will Smart."
+    req = ChatRequest(
+        messages=[Message(role="user", content=user_input)],
+        document=document
+    )
+    response = asyncio.run(chat_completion(req))
     print("Response:", response)

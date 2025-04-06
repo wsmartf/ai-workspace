@@ -26,15 +26,30 @@ function App() {
     });
   }
 
+
   async function sendMessage(input: string) {
     const newChat = [...chat, { role: "user", content: input }];
     setChat([...newChat, { role: "assistant", content: "..." }]);
+
+    console.log("Sending message to GPT:", input);
+    console.log("Document contents:", doc);
+    console.log("Chat history:", newChat);
+    console.log("Body:", JSON.stringify(
+      {
+        messages: newChat,
+        document: doc,
+      })
+    )
 
     try {
       const res = await fetch("http://localhost:11434/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newChat }),
+        body: JSON.stringify(
+          {
+            messages: newChat,
+            document: doc,
+          }),
       });
 
       const data = await res.json();

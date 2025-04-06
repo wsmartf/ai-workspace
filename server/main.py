@@ -1,7 +1,7 @@
 # backend/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from ai import ChatRequest, prompt
+from ai import ChatRequest, chat_completion
 
 app = FastAPI()
 
@@ -15,22 +15,5 @@ app.add_middleware(
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    return {"reply": prompt(req)}
-
-
-"""
-Example HTTP request:
-
-POST /chat HTTP/1.1
-Host: localhost:8000
-Content-Type: application/json
-
-{
-    "messages": [
-        {
-            "role": "user",
-            "content": "What is the capital of France?"
-        }
-    ]
-}
-"""
+    response = await chat_completion(req)
+    return {"reply": response}
