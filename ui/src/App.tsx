@@ -140,23 +140,6 @@ function App() {
     setMessages([...newChat, { role: "assistant", content: data.reply }]);
   }
 
-  function renderChatMessages() {
-    return messages.map((m, i) => (
-      <div
-        key={i}
-        className="mb-4 flex items-center border-b border-gray-300 pb-4"
-      >
-        <div className="flex-1">
-          <strong>{m.role}</strong>
-          <div className="markdown-body">
-            <ReactMarkdown>{m.content}</ReactMarkdown>
-          </div>
-        </div>
-        <button onClick={() => setSavingChat(m)}>💾</button>
-      </div>
-    ));
-  }
-
   async function loadThreadsFromDisk(): Promise<{ id: string; title: string }[]> {
     const path = "Documents/Home/ai-workspace/data/threads.json";
     const fileExists = await exists(path, {
@@ -223,10 +206,7 @@ function App() {
           threads={threads}
           activeThreadId={activeThreadId}
           onSelect={async (id) => {
-            // Save current messages
             if (activeThreadId) await saveMessagesToDisk(activeThreadId, messages);
-          
-            // Load new thread's messages
             const loaded = await loadMessagesFromDisk(id);
             setMessages(loaded);
             setActiveThreadId(id);
@@ -238,7 +218,7 @@ function App() {
           onDelete={deleteThread}
         />
         <MarkdownEditor doc={doc} setDoc={setDoc} loadDocument={loadDocument} saveDocument={saveDocument} />
-        <ChatPanel chat={messages} renderChatMessages={renderChatMessages} sendMessage={sendMessage} />
+        <ChatPanel chat={messages} sendMessage={sendMessage} />
       </div>
 
       {savingChat && (
