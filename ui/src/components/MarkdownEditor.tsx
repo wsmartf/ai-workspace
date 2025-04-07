@@ -1,3 +1,7 @@
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import 'github-markdown-css';
+
 export function MarkdownEditor({
   doc, setDoc, loadDocument, saveDocument,
 }: {
@@ -24,6 +28,11 @@ export function MarkdownEditor({
           outline: 'none',
           resize: 'none',
         }} />
+      <div
+        className="markdown-body"
+        style={{ padding: '1rem', backgroundColor: '#f9f9f9', borderTop: '1px solid #ccc' }}>
+        <ReactMarkdown>{doc}</ReactMarkdown>
+      </div>
     </div>
   );
 }

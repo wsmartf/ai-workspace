@@ -8,6 +8,8 @@ import { ChatPanel } from './ChatPanel';
 import ThreadSidebar from './components/ThreadSidebar';
 import { saveMessagesToDisk, loadMessagesFromDisk, generateThreadId } from './utils/threads';
 import { Thread } from './types/Thread';
+import ReactMarkdown from 'react-markdown';
+import 'github-markdown-css';
 
 function App() {
   const [doc, setDoc] = useState<string>('');
@@ -140,15 +142,17 @@ function App() {
 
   function renderChatMessages() {
     return messages.map((m, i) => (
-      <div key={i} style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
-        <div style={{ flex: 1 }}>
-          <strong>{m.role}</strong>: {m.content}
+      <div
+        key={i}
+        className="mb-4 flex items-center border-b border-gray-300 pb-4"
+      >
+        <div className="flex-1">
+          <strong>{m.role}</strong>
+          <div className="markdown-body">
+            <ReactMarkdown>{m.content}</ReactMarkdown>
+          </div>
         </div>
-        <button
-          onClick={() => setSavingChat(m)}
-        >
-          💾
-        </button>
+        <button onClick={() => setSavingChat(m)}>💾</button>
       </div>
     ));
   }
