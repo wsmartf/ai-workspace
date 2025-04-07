@@ -1,31 +1,30 @@
 import { useState, useEffect } from 'react';
-import { readTextFile, writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
+import { readTextFile, writeTextFile, BaseDirectory, remove } from '@tauri-apps/plugin-fs';
 import { exists } from '@tauri-apps/plugin-fs';
 import MemoryPrompt from "./components/MemoryPrompt";
 import { ChatMessage } from "./types/Chat";
 import { MarkdownEditor } from './components/MarkdownEditor';
 import { ChatPanel } from './ChatPanel';
 import ThreadSidebar from './components/ThreadSidebar';
-import { saveMessagesToDisk, loadMessagesFromDisk } from './utils/threads';
-
-interface Thread {
-  id: string;
-  title: string;
-}
+import { saveMessagesToDisk, loadMessagesFromDisk, generateThreadId } from './utils/threads';
+import { Thread } from './types/Thread';
 
 function App() {
   const [doc, setDoc] = useState<string>('');
-  const [messages, setMessages] = useState<ChatMessage[]>([{ role: 'system', content: 'How can I help you think today?' }]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [savingChat, setSavingChat] = useState<ChatMessage | null>(null);
 
   const [threads, setThreads] = useState<Thread[]>([]);
-  const [activeThreadId, setActiveThreadId] = useState("thread-1");
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [creatingThread, setCreatingThread] = useState(false);
 
   useEffect(() => {
     loadThreadsFromDisk().then((loaded) => {
       if (loaded.length > 0) {
         setThreads(loaded);
         setActiveThreadId(loaded[0].id);
+      } else {
+        createThread();
       }
     });
   }, []);
@@ -171,6 +170,48 @@ function App() {
     });
   }
 
+  async function deleteThread(id: string) {
+    const updatedThreads = threads.filter((thread) => thread.id !== id);
+    setThreads(updatedThreads);
+
+    try {
+      await remove(`Documents/Home/ai-workspace/data/${id}.json`, {
+        baseDir: BaseDirectory.Home,
+      });
+    } catch (err) {
+      console.error(`Error deleting thread file for ${id}:`, err);
+    }
+
+    if (activeThreadId === id && updatedThreads.length > 0) {
+      const firstThread = updatedThreads[0];
+      setActiveThreadId(firstThread.id);
+      const loadedMessages = await loadMessagesFromDisk(firstThread.id);
+      setMessages(loadedMessages);
+    }
+
+    await saveThreadsToDisk(updatedThreads);
+  }
+
+  async function createThread() {
+    if (creatingThread) return;
+    setCreatingThread(true);
+  
+    const threadId = generateThreadId();
+    const threadTitle = `New Thread ${threadId.slice(0, 4)}`;
+    const newThread: Thread = { id: threadId, title: threadTitle };
+    console.log("Creating new thread:", newThread);
+  
+    setThreads((prevThreads) => {
+      const updatedThreads = [...prevThreads, newThread];
+      saveThreadsToDisk(updatedThreads);
+      return updatedThreads;
+    });
+  
+    setActiveThreadId(newThread.id);
+    setMessages([{ role: 'system', content: 'How can I help you think today?' }]);
+    setCreatingThread(false);
+  }
+
   return (
     <>
       <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif' }}>
@@ -187,14 +228,10 @@ function App() {
             setActiveThreadId(id);
           }}
           onNewThread={async () => {
-            const newId = `thread-${threads.length + 1}`;
-            const newThread = { id: newId, title: `Thread ${threads.length + 1}` };
-            const updated = [...threads, newThread];
-            setThreads(updated);
-            setActiveThreadId(newId);
-            setMessages([{ role: 'system', content: 'How can I help you think today?' }]);
-            await saveThreadsToDisk(updated);
+            if (activeThreadId) await saveMessagesToDisk(activeThreadId, messages);
+            createThread();
           }}
+          onDelete={deleteThread}
         />
         <MarkdownEditor doc={doc} setDoc={setDoc} loadDocument={loadDocument} saveDocument={saveDocument} />
         <ChatPanel chat={messages} renderChatMessages={renderChatMessages} sendMessage={sendMessage} />
