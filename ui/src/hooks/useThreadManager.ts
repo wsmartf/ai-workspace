@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Thread } from '../types/Thread';
 import { ChatMessage } from '../types/Chat';
 import { loadThreadsFromDisk, saveThreadsToDisk, loadMessagesFromDisk, saveMessagesToDisk, generateThreadId, deleteThreadFromDisk } from '../utils/threads';
+import log from '../utils/logger';
+
 
 export function useThreadManager() {
     const [threads, setThreads] = useState<Thread[]>([]);
@@ -10,25 +12,26 @@ export function useThreadManager() {
 
     useEffect(() => {
         async function initializeThreads() {
+            log.info('Initializing threads...');
+
             const loadedThreads = await loadThreadsFromDisk();
-            setThreads(loadedThreads); 
+            setThreads(loadedThreads);
+            log.info(`Loaded ${loadedThreads.length} threads from disk.`);
 
             if (loadedThreads.length > 0) {
-                // First, load the messages for all threads into the state
-                for (const thread of loadedThreads) {
-                    console.log(`Loading messages for thread ${thread.id} into state....`);
-                    const messages = await loadMessagesFromDisk(thread.id);
-                    console.log(`Loaded ${messages.length} messages for thread ${thread.id}`);
-                    setThreadMessages((prev) => ({ ...prev, [thread.id]: messages }));
-                }
 
-                // Set the first thread as active
+                const messagesMap = await Promise.all(
+                    loadedThreads.map(async (thread) => {
+                        const messages = await loadMessagesFromDisk(thread.id);
+                        return { [thread.id]: messages };
+                    })
+                );
+                setThreadMessages(Object.assign({}, ...messagesMap));
+
                 const firstThread = loadedThreads[0];
                 setActiveThreadId(firstThread.id);
-                const messages = await loadMessagesFromDisk(firstThread.id);
-                setThreadMessages({ [firstThread.id]: messages });
+                log.info(`Set active thread to ${firstThread.id}.`);
             } else {
-                console.log("No threads found, creating a new one..."); 
                 createThread();
             }
         }
@@ -42,6 +45,7 @@ export function useThreadManager() {
         setThreads((prev) => {
             const updatedThreads = [...prev, newThread];
             saveThreadsToDisk(updatedThreads);
+            log.info(`Created new thread with ID ${threadId}.`);
             return updatedThreads;
         });
 
@@ -53,36 +57,45 @@ export function useThreadManager() {
     };
 
     const deleteThread = async (id: string) => {
+        log.info(`Deleting thread with ID ${id}...`);
         const updatedThreads = threads.filter((thread) => thread.id !== id);
         setThreads(updatedThreads);
 
         if (activeThreadId === id) {
-            const firstThread = updatedThreads[0];
-            if (firstThread) {
+            if (updatedThreads.length > 0) {
+                const firstThread = updatedThreads[0];
                 setActiveThreadId(firstThread.id);
                 const messages = await loadMessagesFromDisk(firstThread.id);
                 setThreadMessages({ [firstThread.id]: messages });
+                log.info(`Active thread switched to ${firstThread.id} after deletion.`);
             } else {
                 setActiveThreadId(null);
                 setThreadMessages({});
+                log.info('No threads remaining after deletion.');
             }
         }
 
-        deleteThreadFromDisk(id).catch((err) => {
-            console.error(`Error deleting thread file for ${id}:`, err);
-        });
+        try {
+            await deleteThreadFromDisk(id);
+            log.info(`Successfully deleted thread file for ${id}.`);
+        } catch (err) {
+            log.error(`Error deleting thread file for ${id}:`, err);
+        }
         saveThreadsToDisk(updatedThreads);
     };
 
     const switchThread = async (id: string) => {
+        log.info(`Switching to thread with ID ${id}...`);
         if (activeThreadId) {
             await saveMessagesToDisk(activeThreadId, threadMessages[activeThreadId] || []);
+            log.info(`Saved messages for thread ${activeThreadId}.`);
         }
         setActiveThreadId(id);
 
         if (!threadMessages[id]) {
             const messages = await loadMessagesFromDisk(id);
             setThreadMessages((prev) => ({ ...prev, [id]: messages }));
+            log.info(`Loaded messages for thread ${id}.`);
         }
     };
 
@@ -91,6 +104,7 @@ export function useThreadManager() {
             ...prev,
             [threadId]: messages,
         }));
+        log.info(`Updated messages for thread ${threadId}.`);
     };
 
     return {

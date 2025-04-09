@@ -14,6 +14,7 @@
     "@tauri-apps/plugin-fs": "^2.2.1",
     "@tauri-apps/plugin-opener": "^2",
     "github-markdown-css": "^5.8.1",
+    "loglevel": "^1.9.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0"

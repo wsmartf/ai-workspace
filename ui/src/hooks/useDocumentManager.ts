@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { readTextFile, writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
+import log from '../utils/logger';
+
 
 export function useDocumentManager() {
   const [doc, setDoc] = useState<string>('');
@@ -15,8 +17,8 @@ export function useDocumentManager() {
       });
       setDoc(contents);
     } catch (err) {
-      console.error('Error loading doc:', err);
-      setDoc(''); // fallback to blank if not found
+      log.error('Error loading doc:', err);
+      setDoc('');
     }
   }
 
@@ -26,7 +28,7 @@ export function useDocumentManager() {
         baseDir: BaseDirectory.Home,
       });
     } catch (err) {
-      console.error('Error saving doc:', err);
+      log.error('Error saving doc:', err);
     }
   }
 
