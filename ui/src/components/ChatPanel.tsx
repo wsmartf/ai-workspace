@@ -26,12 +26,10 @@ export function ChatPanel() {
       <div className="flex flex-col flex-1">
         <div className="flex-1 overflow-auto p-4">
 
-          <MemoryProvider>
-            <ChatMessages
-              contextMenu={contextMenu}
-              setContextMenu={setContextMenu}
-            />
-          </MemoryProvider>
+          <ChatMessages
+            contextMenu={contextMenu}
+            setContextMenu={setContextMenu}
+          />
 
         </div>
         <div className="p-4">
@@ -50,15 +48,14 @@ function ChatMessages({
   setContextMenu: (contextMenu: ContextMenuProps | null) => void;
 }) {
   const { setSavingChat } = useMemoryContext();
-  const { activeThreadId, threadMessages } = useThreadContext();
-  const messages = threadMessages[activeThreadId || ''] || [];
+  const { activeMessages, activeThreadId } = useThreadContext();
 
-  if (!messages || messages.length === 0) {
+  if (!activeMessages || activeMessages.length === 0) {
     return <div className="text-gray-500">No messages yet.</div>;
   }
   return (
     <>
-      {messages.map((m, i) => (
+      {activeMessages.map((m, i) => (
         <div
           key={i}
           className="mb-4 flex items-center border-b border-gray-300 pb-4"

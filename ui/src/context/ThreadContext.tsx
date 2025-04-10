@@ -12,6 +12,7 @@ interface ThreadContextType {
   switchThread: (id: string) => Promise<void>;
   updateMessagesForThread: (threadId: string, messages: ChatMessage[]) => void;
   createBranchThread: (threadId: string, messageIndex: number) => Promise<void>;
+  activeMessages: ChatMessage[] | null;
 }
 
 const ThreadContext = createContext<ThreadContextType | null>(null);

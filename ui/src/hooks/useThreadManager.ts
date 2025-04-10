@@ -9,6 +9,7 @@ export function useThreadManager() {
     const [threads, setThreads] = useState<Thread[]>([]);
     const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
     const [threadMessages, setThreadMessages] = useState<Record<string, ChatMessage[]>>({});
+    const activeMessages = activeThreadId ? threadMessages[activeThreadId] || [] : [];
 
     useEffect(() => {
         async function initializeThreads() {
@@ -143,6 +144,7 @@ export function useThreadManager() {
             deleteThread,
             switchThread,
             updateMessagesForThread,
-            createBranchThread
+            createBranchThread,
+            activeMessages
         };
     }

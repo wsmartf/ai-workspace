@@ -4,9 +4,12 @@ import { useMemory } from "../hooks/useMemory";
 
 
 interface MemoryContextType {
-    saveMemory: (title: string, message: ChatMessage) => Promise<void>;
+    saveMemory: () => Promise<void>;
     savingChat: ChatMessage | null;
     setSavingChat: React.Dispatch<React.SetStateAction<ChatMessage | null>>;
+    title: string | null;
+    setTitle: React.Dispatch<React.SetStateAction<string | null>>;
+    cancelSave: () => Promise<void>;
 }
 
 const MemoryContext = createContext<MemoryContextType | null>(null);

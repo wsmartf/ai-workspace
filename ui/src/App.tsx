@@ -4,33 +4,30 @@ import { ChatPanel } from './components/ChatPanel';
 import ThreadSidebar from './components/ThreadSidebar';
 import { ThreadProvider } from "./context/ThreadContext";
 import { DocumentProvider } from "./context/DocumentContext";
-import { useMemory } from "./hooks/useMemory";
+import { MemoryProvider } from "./context/MemoryContext";
 
 function App() {
-  const { saveMemory, savingChat, setSavingChat } = useMemory();
-
   return (
     <>
-      <ThreadProvider>
-        <DocumentProvider>
+      <DocumentProvider>
+        <MemoryProvider>
+
           <div className="flex h-screen font-sans">
-            <ThreadSidebar />
-            <div className="flex flex-1">
-              <MarkdownEditor />
-              <div className="w-px bg-gray-300"></div> {/* Border */}
-              <ChatPanel />
-            </div>
+            <ThreadProvider>
+              <ThreadSidebar />
+              <div className="flex flex-1">
+                <MarkdownEditor />
+                
+                <div className="w-px bg-gray-300"></div> {/* Border */}
+
+                <ChatPanel />
+              </div>
+            </ThreadProvider>
           </div>
 
-          {savingChat && (
-            <MemoryPrompt
-              message={savingChat}
-              onSubmit={saveMemory}
-              onCancel={() => setSavingChat(null)}
-            />
-          )}
-        </DocumentProvider>
-      </ThreadProvider>
+          <MemoryPrompt />
+        </MemoryProvider>
+      </DocumentProvider>
     </>
   );
 }
