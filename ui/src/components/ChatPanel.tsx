@@ -21,7 +21,7 @@ function MessageList() {
   // Handle messages
   const { activeThreadId, activeMessages, setSavingChat, createBranchThread } = useAppContext();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageIndex: number } | null>(null);
-  
+
   const messageListRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (messageListRef.current) {
@@ -31,7 +31,11 @@ function MessageList() {
 
 
   if (!activeMessages || activeMessages.length === 0) {
-    return <div className="text-gray-500">No messages yet.</div>;
+    return (
+      <div className="flex-1 overflow-y-auto p-7 ">
+        <div className="text-gray-500">No messages yet.</div>
+      </div>
+    );
   }
 
   // Handle context menu
