@@ -1,7 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import { useResponseHandler } from '../hooks/useResponseHandler';
 import { useState, useEffect } from 'react';
-import { MemoryProvider, useMemoryContext } from '../context/MemoryContext';
+import { useMemoryContext } from '../context/MemoryContext';
 import { useThreadContext } from '../context/ThreadContext';
 
 interface ContextMenuProps {
@@ -13,6 +13,17 @@ interface ContextMenuProps {
 
 
 export function ChatPanel() {
+  return (
+    <>
+      <div className="flex flex-col flex-1">
+        <MessageList />
+        <ChatInput />
+      </div>
+    </>
+  );
+}
+
+function MessageList() {
   const [contextMenu, setContextMenu] = useState<ContextMenuProps | null>(null);
 
   useEffect(() => {
@@ -21,71 +32,71 @@ export function ChatPanel() {
     return () => window.removeEventListener("click", close);
   }, []);
 
+  const { activeMessages } = useThreadContext();
+  if (!activeMessages || activeMessages.length === 0) {
+    return <div className="text-gray-500">No messages yet.</div>;
+  }
+
   return (
     <>
-      <div className="flex flex-col flex-1">
-        <div className="flex-1 overflow-auto p-4">
-
-          <ChatMessages
+      <div className="flex-1 overflow-auto p-4">
+        {activeMessages.map((message, index) => (
+          <MessageItem
+            key={index}
+            message={message}
+            index={index}
             contextMenu={contextMenu}
             setContextMenu={setContextMenu}
           />
-
-        </div>
-        <div className="p-4">
-          <ChatInput />
-        </div>
+        ))}
       </div>
     </>
   );
 }
 
-function ChatMessages({
+function MessageItem({
+  message,
+  index,
   contextMenu,
   setContextMenu
 }: {
+  message: { role: string; content: string };
+  index: number;
   contextMenu: ContextMenuProps | null;
   setContextMenu: (contextMenu: ContextMenuProps | null) => void;
 }) {
+  const { activeThreadId } = useThreadContext();
   const { setSavingChat } = useMemoryContext();
-  const { activeMessages, activeThreadId } = useThreadContext();
 
-  if (!activeMessages || activeMessages.length === 0) {
-    return <div className="text-gray-500">No messages yet.</div>;
+  if (!activeThreadId) {
+    return null;
   }
+
   return (
-    <>
-      {activeMessages.map((m, i) => (
+    <div className="mb-4 flex items-center border-b border-gray-300 pb-4">
+      <div className="flex-1">
+        <strong>{message.role}</strong>
         <div
-          key={i}
-          className="mb-4 flex items-center border-b border-gray-300 pb-4"
+          className="markdown-body"
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setContextMenu({
+              x: e.clientX,
+              y: e.clientY,
+              threadId: activeThreadId,
+              messageIndex: index,
+            });
+          }}
         >
-          <div className="flex-1">
-            <strong>{m.role}</strong>
-            <div
-              className="markdown-body"
-              onContextMenu={(e) => {
-                console.log("Context menu triggered");
-                e.preventDefault();
-                setContextMenu({
-                  x: e.clientX,
-                  y: e.clientY,
-                  threadId: activeThreadId || '',
-                  messageIndex: i,
-                });
-              }}
-            >
-              <ReactMarkdown>{m.content}</ReactMarkdown>
-            </div>
-          </div>
-          <button onClick={() => setSavingChat(m)}>💾</button>
-          <ContextMenu
-            contextMenu={contextMenu}
-            setContextMenu={setContextMenu}
-          />
+          <ReactMarkdown>{message.content}</ReactMarkdown>
         </div>
-      ))}
-    </>
+      </div>
+      <button onClick={() => setSavingChat(message)}>💾</button>
+      <ContextMenu
+        contextMenu={contextMenu}
+        setContextMenu={setContextMenu}
+      />
+    </div>
   );
 }
 
@@ -93,22 +104,24 @@ function ChatInput() {
   const { sendMessage, loadingResp } = useResponseHandler();
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        const input = (e.currentTarget.elements.namedItem('msg') as HTMLInputElement).value;
-        if (!input) return;
-        sendMessage(input);
-        e.currentTarget.reset();
-      }}
-    >
-      <input
-        name="msg"
-        disabled={loadingResp}
-        placeholder="Type a message..."
-        className="w-full border rounded px-3 py-2"
-      />
-    </form>
+    <div className="p-4">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const input = (e.currentTarget.elements.namedItem('msg') as HTMLInputElement).value;
+          if (!input) return;
+          sendMessage(input);
+          e.currentTarget.reset();
+        }}
+      >
+        <input
+          name="msg"
+          disabled={loadingResp}
+          placeholder="Type a message..."
+          className="w-full border rounded px-3 py-2"
+        />
+      </form>
+    </div>
   );
 }
 
