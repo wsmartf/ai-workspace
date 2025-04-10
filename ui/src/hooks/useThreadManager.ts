@@ -100,20 +100,49 @@ export function useThreadManager() {
     };
 
     const updateMessagesForThread = (threadId: string, messages: ChatMessage[]) => {
-        setThreadMessages((prev) => ({
-            ...prev,
-            [threadId]: messages,
-        }));
+        setThreadMessages((prev) => {
+            const updatedMessages = { ...prev, [threadId]: [...messages] };
+            return updatedMessages;
+        });
         log.info(`Updated messages for thread ${threadId}.`);
     };
 
-    return {
-        threads,
-        activeThreadId,
-        threadMessages,
-        createThread,
-        deleteThread,
-        switchThread,
-        updateMessagesForThread
+    const createBranchThread = async (parentThreadId: string, messageIndex: number) => {
+        const parentThread = threads.find((thread) => thread.id === parentThreadId);
+        if (!parentThread) {
+            log.error(`Parent thread with ID ${parentThreadId} not found.`);
+            return;
+        }
+        const newThreadId = generateThreadId();
+        const newThread: Thread = { id: newThreadId, title: `Branch of ${parentThread.title}` };
+        setThreads((prev) => {
+            const updatedThreads = [...prev, newThread];
+            saveThreadsToDisk(updatedThreads);
+            log.info(`Created new branch thread with ID ${newThreadId}.`);
+            return updatedThreads;
+        });
+        setActiveThreadId(newThreadId);
+        const parentMessages = threadMessages[parentThreadId] || [];
+        const newMessages = parentMessages.slice(0, messageIndex + 1);
+        setThreadMessages((prev) => ({
+            ...prev,
+            [newThreadId]: newMessages,
+        }));
+        log.info(`Created branch thread with ID ${newThreadId} from message index ${messageIndex}.`);
+        await saveMessagesToDisk(newThreadId, newMessages);
+        log.info(`Saved messages for new branch thread ${newThreadId}.`);
+        await saveThreadsToDisk(threads);
+        log.info(`Saved threads to disk after creating branch thread ${newThreadId}.`);
     };
-}
+
+        return {
+            threads,
+            activeThreadId,
+            threadMessages,
+            createThread,
+            deleteThread,
+            switchThread,
+            updateMessagesForThread,
+            createBranchThread
+        };
+    }

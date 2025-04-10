@@ -1,34 +1,58 @@
-import { ChatMessage } from '../types/Chat';
 import ReactMarkdown from 'react-markdown';
-import { useThreadContext } from '../context/ThreadContext';
 import { useResponseHandler } from '../hooks/useResponseHandler';
+import { useState, useEffect } from 'react';
+import { MemoryProvider, useMemoryContext } from '../context/MemoryContext';
+import { useThreadContext } from '../context/ThreadContext';
+
+interface ContextMenuProps {
+  x: number;
+  y: number;
+  threadId: string;
+  messageIndex: number;
+}
 
 
-export function ChatPanel({ setSavingChat }: { setSavingChat: (message: ChatMessage) => void }) {
-  const { activeThreadId, threadMessages } = useThreadContext();
-  const { sendMessage, loadingResp } = useResponseHandler();
+export function ChatPanel() {
+  const [contextMenu, setContextMenu] = useState<ContextMenuProps | null>(null);
 
-  const messages = activeThreadId ? threadMessages[activeThreadId] || [] : [];
+  useEffect(() => {
+    const close = () => setContextMenu(null);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, []);
 
   return (
-    <div className="flex flex-col flex-1">
-      <div className="flex-1 overflow-auto p-4">
-        <ChatMessages messages={messages} setSavingChat={setSavingChat} />
+    <>
+      <div className="flex flex-col flex-1">
+        <div className="flex-1 overflow-auto p-4">
+
+          <MemoryProvider>
+            <ChatMessages
+              contextMenu={contextMenu}
+              setContextMenu={setContextMenu}
+            />
+          </MemoryProvider>
+
+        </div>
+        <div className="p-4">
+          <ChatInput />
+        </div>
       </div>
-      <div className="p-4">
-        <ChatInput sendMessage={sendMessage} loading={loadingResp} />
-      </div>
-    </div>
+    </>
   );
 }
 
 function ChatMessages({
-  messages,
-  setSavingChat,
+  contextMenu,
+  setContextMenu
 }: {
-  messages: ChatMessage[];
-  setSavingChat: (message: ChatMessage) => void;
+  contextMenu: ContextMenuProps | null;
+  setContextMenu: (contextMenu: ContextMenuProps | null) => void;
 }) {
+  const { setSavingChat } = useMemoryContext();
+  const { activeThreadId, threadMessages } = useThreadContext();
+  const messages = threadMessages[activeThreadId || ''] || [];
+
   if (!messages || messages.length === 0) {
     return <div className="text-gray-500">No messages yet.</div>;
   }
@@ -41,18 +65,36 @@ function ChatMessages({
         >
           <div className="flex-1">
             <strong>{m.role}</strong>
-            <div className="markdown-body">
+            <div
+              className="markdown-body"
+              onContextMenu={(e) => {
+                console.log("Context menu triggered");
+                e.preventDefault();
+                setContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  threadId: activeThreadId || '',
+                  messageIndex: i,
+                });
+              }}
+            >
               <ReactMarkdown>{m.content}</ReactMarkdown>
             </div>
           </div>
           <button onClick={() => setSavingChat(m)}>💾</button>
+          <ContextMenu
+            contextMenu={contextMenu}
+            setContextMenu={setContextMenu}
+          />
         </div>
       ))}
     </>
   );
 }
 
-function ChatInput({ sendMessage, loading }: { sendMessage: (input: string) => Promise<void>; loading: boolean }) {
+function ChatInput() {
+  const { sendMessage, loadingResp } = useResponseHandler();
+
   return (
     <form
       onSubmit={(e) => {
@@ -65,10 +107,42 @@ function ChatInput({ sendMessage, loading }: { sendMessage: (input: string) => P
     >
       <input
         name="msg"
-        disabled={loading}
+        disabled={loadingResp}
         placeholder="Type a message..."
         className="w-full border rounded px-3 py-2"
       />
     </form>
+  );
+}
+
+
+function ContextMenu({
+  contextMenu,
+  setContextMenu
+}: {
+  contextMenu: ContextMenuProps | null;
+  setContextMenu: (contextMenu: ContextMenuProps | null) => void;
+}) {
+
+  const { createBranchThread } = useThreadContext();
+
+  return (
+    contextMenu && (
+      <ul
+        className="absolute bg-white border shadow text-sm z-50"
+        style={{ top: contextMenu.y, left: contextMenu.x }}
+        onClick={() => setContextMenu(null)}
+      >
+        <li
+          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+          onClick={() => {
+            createBranchThread(contextMenu.threadId, contextMenu.messageIndex);
+            setContextMenu(null);
+          }}
+        >
+          Branch from here
+        </li>
+      </ul>
+    )
   );
 }

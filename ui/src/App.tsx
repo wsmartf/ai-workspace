@@ -18,7 +18,7 @@ function App() {
             <div className="flex flex-1">
               <MarkdownEditor />
               <div className="w-px bg-gray-300"></div> {/* Border */}
-              <ChatPanel setSavingChat={setSavingChat} />
+              <ChatPanel />
             </div>
           </div>
 
