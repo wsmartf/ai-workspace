@@ -1,14 +1,9 @@
-import ReactMarkdown from 'react-markdown';
 import { useResponseHandler } from '../hooks/useResponseHandler';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
+import MessageItem from '../components/MessageItem';
+import { MenuItem, ContextMenu } from '../components/ContextMenu';
 
-interface ContextMenuProps {
-  x: number;
-  y: number;
-  threadId: string;
-  messageIndex: number;
-}
 
 
 export function ChatPanel() {
@@ -23,78 +18,79 @@ export function ChatPanel() {
 }
 
 function MessageList() {
-  const [contextMenu, setContextMenu] = useState<ContextMenuProps | null>(null);
-
+  // Handle messages
+  const { activeThreadId, activeMessages, setSavingChat, createBranchThread } = useAppContext();
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageIndex: number } | null>(null);
+  
+  const messageListRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const close = () => setContextMenu(null);
-    window.addEventListener("click", close);
-    return () => window.removeEventListener("click", close);
-  }, []);
+    if (messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    }
+  }, [activeMessages]);
 
-  const { activeMessages } = useAppContext();
+
   if (!activeMessages || activeMessages.length === 0) {
     return <div className="text-gray-500">No messages yet.</div>;
   }
 
+  // Handle context menu
+  const handleContextMenu = (x: number, y: number, index: number) => {
+    setContextMenu({ x, y, messageIndex: index });
+  };
+
+  const menuItems: MenuItem[] = [
+    {
+      label: "Branch from here",
+      onClick: () => {
+        if (activeThreadId && contextMenu) {
+          createBranchThread(activeThreadId, contextMenu.messageIndex);
+          setContextMenu(null);
+        }
+      },
+    },
+    {
+      label: "Save to memory",
+      onClick: () => {
+        if (contextMenu) {
+          setSavingChat(activeMessages[contextMenu.messageIndex]);
+          setContextMenu(null);
+        }
+      },
+    },
+    // {
+    //   label: "Copy",
+    //   onClick: () => {
+    //     if (contextMenu) {
+    //       navigator.clipboard.writeText(activeMessages[contextMenu.messageIndex].content);
+    //       setContextMenu(null);
+    //     }
+    //   },
+    // }
+  ];
+
   return (
     <>
-      <div className="flex-1 overflow-auto p-4">
+      <div ref={messageListRef} className="flex-1 overflow-y-auto p-4">
         {activeMessages.map((message, index) => (
           <MessageItem
             key={index}
             message={message}
             index={index}
-            contextMenu={contextMenu}
-            setContextMenu={setContextMenu}
+            onShowContextMenu={handleContextMenu}
+            isSelected={contextMenu?.messageIndex === index}
           />
         ))}
       </div>
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={menuItems}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </>
-  );
-}
-
-function MessageItem({
-  message,
-  index,
-  contextMenu,
-  setContextMenu
-}: {
-  message: { role: string; content: string };
-  index: number;
-  contextMenu: ContextMenuProps | null;
-  setContextMenu: (contextMenu: ContextMenuProps | null) => void;
-}) {
-  const { activeThreadId, setSavingChat } = useAppContext();
-
-  if (!activeThreadId) {
-    return null;
-  }
-
-  return (
-    <div className="mb-4 flex items-center border-b border-gray-300 pb-4">
-      <div className="flex-1">
-        <strong>{message.role}</strong>
-        <div
-          className="markdown-body"
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setContextMenu({
-              x: e.clientX,
-              y: e.clientY,
-              threadId: activeThreadId,
-              messageIndex: index,
-            });
-          }}
-        >
-          <ReactMarkdown>{message.content}</ReactMarkdown>
-        </div>
-      </div>
-      <button onClick={() => setSavingChat(message)}>💾</button>
-      <ContextMenu
-        contextMenu={contextMenu}
-        setContextMenu={setContextMenu}
-      />
-    </div>
   );
 }
 
@@ -120,37 +116,5 @@ function ChatInput() {
         />
       </form>
     </div>
-  );
-}
-
-
-function ContextMenu({
-  contextMenu,
-  setContextMenu
-}: {
-  contextMenu: ContextMenuProps | null;
-  setContextMenu: (contextMenu: ContextMenuProps | null) => void;
-}) {
-
-  const { createBranchThread } = useAppContext();
-
-  return (
-    contextMenu && (
-      <ul
-        className="absolute bg-white border shadow text-sm z-50"
-        style={{ top: contextMenu.y, left: contextMenu.x }}
-        onClick={() => setContextMenu(null)}
-      >
-        <li
-          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-          onClick={() => {
-            createBranchThread(contextMenu.threadId, contextMenu.messageIndex);
-            setContextMenu(null);
-          }}
-        >
-          Branch from here
-        </li>
-      </ul>
-    )
   );
 }
