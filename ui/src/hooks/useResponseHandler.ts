@@ -2,14 +2,12 @@ import { useState } from "react";
 import { ChatMessage } from "../types/Chat";
 import { fetchFromServer } from "../utils/server";
 import { saveMessagesToDisk } from "../utils/threads";
-import { useThreadContext } from "../context/ThreadContext";
-import { useDocumentContext } from "../context/DocumentContext";
 import log from "../utils/logger";
+import { useAppContext } from "../context/AppContext";
 
 export function useResponseHandler() {
     const [loadingResp, setLoadingResp] = useState(false);
-    const { activeThreadId, threadMessages, updateMessagesForThread } = useThreadContext();
-    const { doc, setDoc } = useDocumentContext();
+    const { doc, setDoc, activeThreadId, threadMessages, updateMessagesForThread } = useAppContext();
 
     async function sendMessage(input: string) {
         const threadId = activeThreadId;

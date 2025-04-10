@@ -1,8 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import { useResponseHandler } from '../hooks/useResponseHandler';
 import { useState, useEffect } from 'react';
-import { useMemoryContext } from '../context/MemoryContext';
-import { useThreadContext } from '../context/ThreadContext';
+import { useAppContext } from '../context/AppContext';
 
 interface ContextMenuProps {
   x: number;
@@ -32,7 +31,7 @@ function MessageList() {
     return () => window.removeEventListener("click", close);
   }, []);
 
-  const { activeMessages } = useThreadContext();
+  const { activeMessages } = useAppContext();
   if (!activeMessages || activeMessages.length === 0) {
     return <div className="text-gray-500">No messages yet.</div>;
   }
@@ -65,8 +64,7 @@ function MessageItem({
   contextMenu: ContextMenuProps | null;
   setContextMenu: (contextMenu: ContextMenuProps | null) => void;
 }) {
-  const { activeThreadId } = useThreadContext();
-  const { setSavingChat } = useMemoryContext();
+  const { activeThreadId, setSavingChat } = useAppContext();
 
   if (!activeThreadId) {
     return null;
@@ -134,7 +132,7 @@ function ContextMenu({
   setContextMenu: (contextMenu: ContextMenuProps | null) => void;
 }) {
 
-  const { createBranchThread } = useThreadContext();
+  const { createBranchThread } = useAppContext();
 
   return (
     contextMenu && (

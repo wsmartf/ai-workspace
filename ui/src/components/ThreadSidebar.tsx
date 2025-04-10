@@ -1,7 +1,8 @@
-import { useThreadContext } from '../context/ThreadContext';
+import { useAppContext } from "../context/AppContext";
+
 
 export default function ThreadSidebar() {
-  const { threads, activeThreadId, switchThread, createThread, deleteThread } = useThreadContext();
+  const { threads, activeThreadId, switchThread, createThread, deleteThread } = useAppContext();
 
   return (
     <div className="w-64 bg-gray-100 border-r h-full flex flex-col">

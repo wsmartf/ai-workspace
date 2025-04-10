@@ -1,9 +1,22 @@
 import ReactMarkdown from 'react-markdown';
 import 'github-markdown-css';
-import { useDocumentContext } from '../context/DocumentContext';
+import { useAppContext } from '../context/AppContext';
+
+
+export function MarkdownEditor() {
+  const { doc } = useAppContext();
+  return (
+    <div className="flex flex-col flex-1">
+      <EditorToolbar />
+      <MarkdownTextArea />
+      <MarkdownPreviewer doc={doc} />
+    </div>
+  );
+}
+
 
 function MarkdownTextArea() {
-  const { doc, setDoc } = useDocumentContext();
+  const { doc, setDoc } = useAppContext();
   return (
     <textarea
       value={doc}
@@ -15,7 +28,7 @@ function MarkdownTextArea() {
 }
 
 function EditorToolbar() {
-  const { loadDocument, saveDocument } = useDocumentContext();
+  const { loadDocument, saveDocument } = useAppContext();
 
   return (
     <div className="p-2 border-b border-gray-300 flex gap-2">
@@ -25,21 +38,10 @@ function EditorToolbar() {
   );
 }
 
-export function MarkdownPreviewer() {
-  const { doc } = useDocumentContext();
+export function MarkdownPreviewer({ doc }: { doc: string }) {
   return (
     <div className="markdown-body p-4 bg-gray-100 border-t border-gray-300 flex-1 overflow-auto">
       <ReactMarkdown>{doc}</ReactMarkdown>
-    </div>
-  );
-}
-
-export function MarkdownEditor() {
-  return (
-    <div className="flex flex-col flex-1">
-      <EditorToolbar />
-      <MarkdownTextArea />
-      <MarkdownPreviewer />
     </div>
   );
 }

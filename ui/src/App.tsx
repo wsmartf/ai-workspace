@@ -2,32 +2,27 @@ import MemoryPrompt from "./components/MemoryPrompt";
 import { MarkdownEditor } from './components/MarkdownEditor';
 import { ChatPanel } from './components/ChatPanel';
 import ThreadSidebar from './components/ThreadSidebar';
-import { ThreadProvider } from "./context/ThreadContext";
-import { DocumentProvider } from "./context/DocumentContext";
-import { MemoryProvider } from "./context/MemoryContext";
+import { AppProvider } from "./context/AppContext";
 
 function App() {
   return (
     <>
-      <DocumentProvider>
-        <MemoryProvider>
+      <AppProvider>
 
-          <div className="flex h-screen font-sans">
-            <ThreadProvider>
-              <ThreadSidebar />
-              <div className="flex flex-1">
-                <MarkdownEditor />
-                
-                <div className="w-px bg-gray-300"></div> {/* Border */}
+        <div className="flex h-screen font-sans">
+          <ThreadSidebar />
+          <div className="flex flex-1">
+            <MarkdownEditor />
 
-                <ChatPanel />
-              </div>
-            </ThreadProvider>
+            <div className="w-px bg-gray-300"></div> {/* Border */}
+
+            <ChatPanel />
           </div>
+        </div>
 
-          <MemoryPrompt />
-        </MemoryProvider>
-      </DocumentProvider>
+        <MemoryPrompt />
+
+      </AppProvider>
     </>
   );
 }

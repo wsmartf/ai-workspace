@@ -1,7 +1,7 @@
-import { useMemoryContext } from "../context/MemoryContext";
+import { useAppContext } from "../context/AppContext";
 
 export default function MemoryPrompt() {
-  const { savingChat } = useMemoryContext();
+  const { savingChat } = useAppContext();
 
   return (
     savingChat && (
@@ -20,7 +20,7 @@ export default function MemoryPrompt() {
 }
 
 function MemoryInput() {
-  const { title, setTitle } = useMemoryContext();
+  const { title, setTitle } = useAppContext();
 
   return (
     <input
@@ -34,7 +34,7 @@ function MemoryInput() {
 }
 
 function SaveButton() {
-  const { saveMemory, title } = useMemoryContext();
+  const { saveMemory, title } = useAppContext();
   return (
     <button
       className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -52,7 +52,7 @@ function SaveButton() {
 }
 
 function CancelButton() {
-  const { cancelSave } = useMemoryContext();
+  const { cancelSave } = useAppContext();
 
   return (
     <button
