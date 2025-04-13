@@ -6,8 +6,11 @@ from openai.types.chat.chat_completion import ChatCompletion, ChatCompletionMess
 from openai.types.responses import Response
 from memory import load_memory
 from structs import ChatRequest, Message
+from dotenv import load_dotenv
+from os import getenv
+load_dotenv()
 
-client = AsyncOpenAI()
+client = AsyncOpenAI(api_key=getenv("OPENAI_API_KEY"))
 
 def system_role(memory: Optional[str] = None):
     memory_str = f"\nHere are some shared memory notes:\n{memory}" if memory else ""

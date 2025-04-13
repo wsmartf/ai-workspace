@@ -1,4 +1,3 @@
-// context/AppContext.tsx
 import React, { createContext, useContext } from "react";
 import { useDocumentManager } from "../hooks/useDocumentManager";
 import { useMemory } from "../hooks/useMemory";
