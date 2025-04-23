@@ -1,3 +1,4 @@
+#idea #chatgpt 
 This is an excellent instinct — and a necessary shift from *“just building”* to *“thinking like an architect.”*
 
 You're essentially building a **personalized knowledge system powered by AI** — one that combines storage, retrieval, summarization, and dynamic reasoning.

@@ -1,3 +1,5 @@
+#chatgpt
+
 This is a **fantastic batch of raw thoughts**, and you're circling something really powerful here. Let's now start **carving out structure** from it — both conceptually and practically.
 
 ---
