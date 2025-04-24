@@ -38,3 +38,11 @@ UI:
 ```
 npm run tauri dev
 ```
+
+
+## Dev Requirements
+
+- Node.js (v18+ recommended)
+- Rust (https://rust-lang.org/tools/install)
+- macOS, Linux, or Windows (Tauri supports all)
+- Xcode Command Line Tools (macOS only): `xcode-select --install`
