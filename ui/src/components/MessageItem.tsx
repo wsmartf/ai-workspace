@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown';
+import 'github-markdown-css';
 
 interface MessageItemProps {
     message: { role: string; content: string };
@@ -21,7 +22,7 @@ export default function MessageItem({
                 e.preventDefault();
                 onShowContextMenu(e.clientX, e.clientY, index);
             }}
-            className={`w-full flex px-4 py-1 ${isUser ? 'justify-end' : 'justify-start'}`}
+            className={`markdown-body w-full flex px-4 py-1 ${isUser ? 'justify-end' : 'justify-start'}`}
         >
             <div
                 className={`
