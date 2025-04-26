@@ -11,6 +11,7 @@ from os import getenv
 load_dotenv()
 
 client = AsyncOpenAI(api_key=getenv("OPENAI_API_KEY"))
+MODEL = "gpt-4.1-mini"
 
 def system_role(memory: Optional[str] = None):
     memory_str = f"\nHere are some shared memory notes:\n{memory}" if memory else ""
@@ -30,7 +31,7 @@ async def chat_completion(req: ChatRequest):
     )
 
     chat_completion: ChatCompletion = await client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=MODEL,
         messages=[
             system_role(memory),
             {
@@ -63,7 +64,7 @@ async def edit_document(req: ChatRequest) -> dict:
     )
 
     response: Response = await client.responses.create(
-        model="gpt-4o-mini",
+        model=MODEL,
         input=[
             system_role(memory),
             *req.messages,
