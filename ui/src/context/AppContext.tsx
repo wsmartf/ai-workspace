@@ -6,10 +6,9 @@ import { Thread, ThreadMessage } from "../types/Thread";
 
 interface AppContextType {
   // Document
-  doc: string;
-  setDoc: (doc: string) => void;
-  loadDocument: () => Promise<void>;
-  saveDocument: () => Promise<void>;
+  currentDocContent: string | null;
+  setCurrentDocContent: React.Dispatch<React.SetStateAction<string | null>>;
+  saveDocumentState: () => Promise<void>;
 
   // Memory
   saveMemory: () => Promise<void>;

@@ -16,5 +16,30 @@ def send_message(thread_id: int, content: str):
     except Exception as e:
         print("Failed to parse JSON:", e)
 
+
+def get_document(doc_id: int):
+    url = f"{BASE_URL}/documents/{doc_id}"
+    res = requests.get(url)
+    print(f"Status: {res.status_code}")
+    try:
+        data = res.json()
+        print(json.dumps(data, indent=2))
+    except Exception as e:
+        print("Failed to parse JSON:", e)
+
+def create_document(title: str, content: str):
+    url = f"{BASE_URL}/documents"
+    payload = {
+        "title": title,
+        "content": content
+    }
+    res = requests.post(url, json=payload)
+    print(f"Status: {res.status_code}")
+    try:
+        data = res.json()
+        print(json.dumps(data, indent=2))
+    except Exception as e:
+        print("Failed to parse JSON:", e)
+
 if __name__ == "__main__":
-    send_message(1, "What does the document say?")
+    create_document("Test Document", "This is a test document.")

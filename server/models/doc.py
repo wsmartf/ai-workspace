@@ -5,6 +5,6 @@ class Document(BaseModel):
     title: str
     content: str
     created_at: str
-    last_active_at: str
+    last_modified_at: str
     linked_threads: list[int]
     linked_nodes: list[int]

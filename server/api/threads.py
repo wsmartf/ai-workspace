@@ -3,9 +3,11 @@ import json
 from pathlib import Path
 from models.thread import Thread
 from models.chat_message import ChatMessage
-from api.ai import chat_completion
+from api.ai import chat_completion, edit_document
 from models.chat_request import ChatRequest
-from models.send_message_request import SendMessageRequest
+from models.send_message_request import SendMessageRequest, SendMessageResponse
+from api.docs import get_document
+from models.doc import Document
 
 
 def get_thread(id: int) -> Thread:
@@ -98,8 +100,33 @@ def update_thread(
 
     return thread
 
-async def send_dummy_message(id: int, message: str) -> Thread:
-    """Simulate sending a message and return a dummy response."""
+# async def send_dummy_message(id: int, message: str) -> Thread:
+#     """Simulate sending a message and return a dummy response."""
+#     # Load the existing thread
+#     thread = get_thread(id)
+#     new_message = ChatMessage(
+#         content=message,
+#         role="user",
+#         created_at="2023-10-01T00:00:00Z"
+#     )
+#     thread.messages.append(new_message)
+
+#     # Simulate a delay and return a dummy response
+#     await asyncio.sleep(5)
+#     dummy_response = "This is a dummy message"
+#     assistant_message = ChatMessage(
+#         content=dummy_response,
+#         role="assistant",
+#         created_at="2023-10-01T00:00:00Z"
+#     )
+#     thread.messages.append(assistant_message)
+#     thread.last_active_at = "2023-10-01T00:00:00Z"
+
+#     # Save the updated thread to a file
+#     save_thread(thread)
+#     return thread
+
+async def send_message(id: int, message: str, is_edit: bool = False) -> tuple[Thread, str]:
     # Load the existing thread
     thread = get_thread(id)
     new_message = ChatMessage(
@@ -109,39 +136,26 @@ async def send_dummy_message(id: int, message: str) -> Thread:
     )
     thread.messages.append(new_message)
 
-    # Simulate a delay and return a dummy response
-    await asyncio.sleep(5)
-    dummy_response = "This is a dummy message"
-    assistant_message = ChatMessage(
-        content=dummy_response,
-        role="assistant",
-        created_at="2023-10-01T00:00:00Z"
-    )
-    thread.messages.append(assistant_message)
-    thread.last_active_at = "2023-10-01T00:00:00Z"
-
-    # Save the updated thread to a file
-    save_thread(thread)
-    return thread
-
-async def send_message(id: int, message: str) -> Thread:
-    # Load the existing thread
-    thread = get_thread(id)
-    new_message = ChatMessage(
-        content=message,
-        role="user",
-        created_at="2023-10-01T00:00:00Z"
-    )
-    thread.messages.append(new_message)
+    document_content = ""
+    if thread.document_id is not None:
+        document_content = get_document(thread.document_id).content
 
     # Send req to the LLM
     req = ChatRequest(
-        document="test document content",
+        document=document_content,
         messages=thread.messages,
     )
-    response = await chat_completion(req)
+    
+    updated_doc_content = None
+    if is_edit:
+        resp = await edit_document(req)
+        message = resp["message"]
+        updated_doc_content = resp["document"]
+    else:
+        message = await chat_completion(req)
+        
     assistant_message = ChatMessage(
-        content=response,
+        content=message,
         role="assistant",
         created_at="2023-10-01T00:00:00Z"
     )
@@ -150,7 +164,8 @@ async def send_message(id: int, message: str) -> Thread:
 
     # Save the updated thread to a file
     save_thread(thread)
-    return thread
+
+    return thread, updated_doc_content
 
 
 def delete_thread(id: int):

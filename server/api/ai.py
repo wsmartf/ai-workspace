@@ -57,8 +57,8 @@ async def edit_document(req: ChatRequest) -> dict:
     Edit a document based on user instructions.
 
     Returns a dictionary with two fields:
-    - 'updated_doc': the full, revised markdown document
-    - 'edit_summary': a short explanation of what you changed
+    - 'document': the full, revised markdown document
+    - 'message': a short explanation of what you changed
     """
     memory = "\n".join(f"- {item.title}: {item.content}" for item in load_memory())
 
@@ -84,10 +84,10 @@ async def edit_document(req: ChatRequest) -> dict:
                 "schema": {
                     "type": "object",
                     "properties": {
-                        "edit_summary": {"type": "string"},
-                        "updated_doc": {"type": "string"},
+                        "message": {"type": "string"},
+                        "document": {"type": "string"},
                     },
-                    "required": ["updated_doc", "edit_summary"],
+                    "required": ["document", "message"],
                     "additionalProperties": False,
                 },
                 "strict": True,

@@ -4,8 +4,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Body, Query
 from api.memory import add_memory_item
 from api import threads, docs
-from models.send_message_request import SendMessageRequest
+from models.send_message_request import SendMessageRequest, SendMessageResponse
 from models.thread_request import NewThreadRequest, UpdateThreadRequest
+from models.doc import Document
+import logging
+
+from models.document_request import NewDocumentRequest
+
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 
@@ -38,7 +44,7 @@ async def get_all_threads():
 
 @app.get("/documents/{id}")
 async def get_document(id: int):
-    return docs.get_document(id).model_dump()
+    return docs.get_document(id)
 
 
 @app.post("/threads")
@@ -71,15 +77,61 @@ async def send_message(
     id: int,
     message_request: SendMessageRequest = Body(...),
     demo: bool = Query(default=False),
-):
-    if demo:
-        thread = await threads.send_dummy_message(id, message_request.content)
-    else:
-        thread = await threads.send_message(id, message_request.content)
-    return thread.model_dump()
+) -> SendMessageResponse:
+    # if demo:
+    #     thread = await threads.send_dummy_message(id, message_request.content)
+    # else:
+    thread, doc = await threads.send_message(
+        id, message_request.content, is_edit=message_request.is_edit
+    )
+    return SendMessageResponse(thread=thread.model_dump(), document=doc)
 
 
 @app.delete("/threads/{id}")
 async def delete_thread(id: int):
     threads.delete_thread(id)
+    return {"status": "ok"}
+
+
+@app.get("/documents")
+async def get_all_documents():
+    return docs.get_all_documents()
+
+
+@app.get("/documents/{id}")
+async def get_document(id: int):
+    return docs.get_document(id).model_dump()
+
+
+@app.post("/documents")
+async def create_document(
+    req: NewDocumentRequest = Body(...),
+):
+    document = docs.create_document(
+        req.title,
+        req.content,
+        req.linked_threads,
+        req.linked_nodes,
+    )
+    return document.model_dump()
+
+
+@app.put("/documents/{id}")
+async def update_document(
+    id: int,
+    req: NewDocumentRequest = Body(...),
+):
+    document = docs.update_document(
+        id,
+        req.title,
+        req.content,
+        req.linked_threads,
+        req.linked_nodes,
+    )
+    return document.model_dump()
+
+
+@app.delete("/documents/{id}")
+async def delete_document(id: int):
+    docs.delete_document(id)
     return {"status": "ok"}

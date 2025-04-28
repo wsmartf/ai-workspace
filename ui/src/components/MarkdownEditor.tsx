@@ -4,23 +4,23 @@ import { useAppContext } from '../context/AppContext';
 
 
 export function MarkdownEditor() {
-  const { doc } = useAppContext();
+  const { currentDocContent } = useAppContext();
   return (
     <div className="flex flex-col flex-1">
       <EditorToolbar />
       <MarkdownTextArea />
-      <MarkdownPreviewer doc={doc} />
+      <MarkdownPreviewer doc={currentDocContent || ''} />
     </div>
   );
 }
 
 
 function MarkdownTextArea() {
-  const { doc, setDoc } = useAppContext();
+  const { currentDocContent, setCurrentDocContent } = useAppContext();
   return (
     <textarea
-      value={doc}
-      onChange={(e) => setDoc(e.target.value)}
+      value={currentDocContent || ''}
+      onChange={(e) => setCurrentDocContent(e.target.value)}
       placeholder="Write your doc here..."
       className="flex-1 p-4 font-mono border-none outline-none resize-none"
     />
@@ -28,12 +28,11 @@ function MarkdownTextArea() {
 }
 
 function EditorToolbar() {
-  const { loadDocument, saveDocument } = useAppContext();
+  const { saveDocumentState } = useAppContext();
 
   return (
     <div className="p-2 border-b border-gray-300 flex gap-2">
-      <button onClick={loadDocument} className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">📂 Load</button>
-      <button onClick={saveDocument} className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">💾 Save</button>
+      <button onClick={saveDocumentState} className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">💾 Save</button>
     </div>
   );
 }

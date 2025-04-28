@@ -1,41 +1,80 @@
 import { useEffect, useState } from 'react';
-import { readTextFile, writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
 import log from '../utils/logger';
+import { Document } from '../types/Document';
+import { getDocumentApi, getDocumentsApi, createDocumentApi, deleteDocumentApi, updateDocumentApi } from '../utils/docsApi';
 
 
 export function useDocumentManager() {
-  const [doc, setDoc] = useState<string>('');
+  const [docs, setDocs] = useState<Document[]>([]);
+  const [activeDocId, setActiveDocId] = useState<string | null>(null);
+  // const currentDoc = activeDocId ? docs.find(doc => doc.id === activeDocId) ?? null : null;
+
+  const [currentDocContent, setCurrentDocContent] = useState<string | null>(null);
 
   useEffect(() => {
-    loadDocument();
+    async function initializeDocs() {
+      log.info('Initializing documents...');
+      await switchToFirstDoc();
+    }
+    initializeDocs();
   }, []);
 
-  async function loadDocument() {
-    try {
-      const contents = await readTextFile("Documents/Home/ai-workspace/data/document.md", {
-        baseDir: BaseDirectory.Home,
-      });
-      setDoc(contents);
-    } catch (err) {
-      log.error('Error loading doc:', err);
-      setDoc('');
+  const updateDocs = async (): Promise<Document[]> => {
+    const docsArray: Document[] = await getDocumentsApi();
+    setDocs(docsArray);
+    if (activeDocId) {
+      const currentDoc = docsArray.find(doc => doc.id === activeDocId);
+      const content = currentDoc?.content || null;
+      setCurrentDocContent(content);
+      log.info(`Loaded document content for ID: ${activeDocId}`);
+    } else {
+      setCurrentDocContent(null);
+      log.warn('No active document ID set. Current document content is null.');
+    }
+    return docsArray;
+  }
+
+  const switchToFirstDoc = async () => {
+    const updatedDocs = await updateDocs();
+
+    if (updatedDocs.length > 0) {
+      setActiveDocId(updatedDocs[0].id);
+      setCurrentDocContent(updatedDocs[0].content);
+      log.info(`Loaded first document: ${updatedDocs[0].id}`);
+    } else {
+      log.warn('No documents available. Creating a new document.');
+      await createDocumentApi("New Document", "");
+      await updateDocs();
+      setActiveDocId(updatedDocs[0].id);
+      setCurrentDocContent(updatedDocs[0].content);
+      // setActiveDocId(null);
     }
   }
 
-  async function saveDocument() {
-    try {
-      await writeTextFile("Documents/Home/ai-workspace/data/document.md", doc, {
-        baseDir: BaseDirectory.Home,
-      });
-    } catch (err) {
-      log.error('Error saving doc:', err);
+  const saveDocumentState = async () => {
+    if (currentDocContent && activeDocId) {
+      log.info(`Saving document state for ID: ${activeDocId}`);
+      updateDocument(activeDocId, currentDocContent);
+    } else {
+      log.warn('No document content to save or no active document.');
     }
+  }
+
+  const updateDocument = async (id: string, content: string) => {
+    log.info(`Updating document with ID: ${id}`);
+    await updateDocumentApi(id, content);
+    await updateDocs();
+
+    // const createDoc = async (name: string = 'New Document', content: string = '') => {
+    //   log.info('Creating new document...');
+    //   const doc: Document = await createDocumentApi(name, content);
+    //   await updateDocs();
+    //   setActiveDocId(doc.id);
   }
 
   return {
-    doc,
-    setDoc,
-    loadDocument,
-    saveDocument,
+    currentDocContent,
+    setCurrentDocContent,
+    saveDocumentState
   };
 }

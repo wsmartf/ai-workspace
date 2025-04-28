@@ -9,6 +9,8 @@ interface FetchOptions {
 const BASE_URL = "http://127.0.0.1:11434";
 
 export async function apiFetch<T = any>(endpoint: string, options: FetchOptions = {}): Promise<T> {
+  console.log(`API Fetch: ${BASE_URL}${endpoint}`, options);
+
   const { method = 'GET', body, query } = options;
 
   let url = `${BASE_URL}${endpoint}`;
