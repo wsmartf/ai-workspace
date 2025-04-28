@@ -1,9 +1,9 @@
 
 import { useState } from "react";
-import { ChatMessage } from "../types/Chat";
+import { ThreadMessage } from "../types/Thread";
 
 export function useMemory() {
-  const [savingChat, setSavingChat] = useState<ChatMessage | null>(null);
+  const [savingChat, setSavingChat] = useState<ThreadMessage | null>(null);
   const [title, setTitle] = useState<string | null>(null);
 
   async function saveMemory() {

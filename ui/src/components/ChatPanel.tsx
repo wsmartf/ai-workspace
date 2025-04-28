@@ -1,4 +1,3 @@
-import { useResponseHandler } from '../hooks/useResponseHandler';
 import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import MessageItem from '../components/MessageItem';
@@ -10,8 +9,8 @@ export function ChatPanel() {
   return (
     <>
       <div className="flex flex-col flex-1">
-        <MessageList />
-        <ChatInput />
+        <MessageList/>
+        <ChatInput/>
       </div>
     </>
   );
@@ -19,18 +18,19 @@ export function ChatPanel() {
 
 function MessageList() {
   // Handle messages
-  const { activeThreadId, activeMessages, setSavingChat, createBranchThread } = useAppContext();
+  const { loading, currentThread, setSavingChat, createBranchThread } = useAppContext();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageIndex: number } | null>(null);
+  const messages = currentThread?.messages || [];
 
   const messageListRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (messageListRef.current) {
       messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
     }
-  }, [activeMessages]);
+  }, [messages]);
 
 
-  if (!activeMessages || activeMessages.length === 0) {
+  if (!messages || messages.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto p-7 ">
         <div className="text-gray-500">No messages yet.</div>
@@ -47,8 +47,8 @@ function MessageList() {
     {
       label: "Branch from here",
       onClick: () => {
-        if (activeThreadId && contextMenu) {
-          createBranchThread(activeThreadId, contextMenu.messageIndex);
+        if (contextMenu) {
+          createBranchThread(contextMenu.messageIndex);
           setContextMenu(null);
         }
       },
@@ -57,7 +57,7 @@ function MessageList() {
       label: "Save to memory",
       onClick: () => {
         if (contextMenu) {
-          setSavingChat(activeMessages[contextMenu.messageIndex]);
+          setSavingChat(messages[contextMenu.messageIndex]);
           setContextMenu(null);
         }
       },
@@ -76,7 +76,7 @@ function MessageList() {
   return (
     <>
       <div ref={messageListRef} className="flex-1 overflow-y-auto p-4">
-        {activeMessages.map((message, index) => (
+        {messages.map((message, index) => (
           <MessageItem
             key={index}
             message={message}
@@ -99,7 +99,7 @@ function MessageList() {
 }
 
 function ChatInput() {
-  const { sendMessage, loadingResp } = useResponseHandler();
+  const { sendMessage, loading } = useAppContext();
 
   return (
     <div className="p-4">
@@ -114,7 +114,7 @@ function ChatInput() {
       >
         <input
           name="msg"
-          disabled={loadingResp}
+          disabled={loading}
           placeholder="Type a message..."
           className="w-full border rounded px-3 py-2"
         />

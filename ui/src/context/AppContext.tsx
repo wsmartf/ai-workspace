@@ -2,9 +2,7 @@ import React, { createContext, useContext } from "react";
 import { useDocumentManager } from "../hooks/useDocumentManager";
 import { useMemory } from "../hooks/useMemory";
 import { useThreadManager } from "../hooks/useThreadManager";
-
-import { ChatMessage } from "../types/Chat";
-import { Thread } from "../types/Thread";
+import { Thread, ThreadMessage } from "../types/Thread";
 
 interface AppContextType {
   // Document
@@ -15,22 +13,24 @@ interface AppContextType {
 
   // Memory
   saveMemory: () => Promise<void>;
-  savingChat: ChatMessage | null;
-  setSavingChat: React.Dispatch<React.SetStateAction<ChatMessage | null>>;
+  savingChat: ThreadMessage | null;
+  setSavingChat: React.Dispatch<React.SetStateAction<ThreadMessage | null>>;
   title: string | null;
   setTitle: React.Dispatch<React.SetStateAction<string | null>>;
   cancelSave: () => Promise<void>;
 
   // Threads
-  threads: Thread[];
-  activeThreadId: string | null;
-  threadMessages: Record<string, ChatMessage[]>;
-  createThread: () => Promise<void>;
+  currentThread: Thread | null;
+  loading: boolean;
+  threadsById: Record<string, Thread>;
+  threadOrder: string[];
+  createThread: (title?: string) => Promise<void>;
   deleteThread: (id: string) => Promise<void>;
-  switchThread: (id: string) => Promise<void>;
-  updateMessagesForThread: (threadId: string, messages: ChatMessage[]) => void;
-  createBranchThread: (threadId: string, messageIndex: number) => Promise<void>;
-  activeMessages: ChatMessage[] | null;
+  createBranchThread: (messageIndex: number) => Promise<void>;
+  switchToThread: (id: string) => void;
+  switchToFirstThread: () => void;
+  sendMessage: (message: string) => Promise<void>;
+  isActiveThread: (id: string) => boolean;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
