@@ -18,7 +18,7 @@ export function ChatPanel() {
 
 function MessageList() {
   // Handle messages
-  const { loading, currentThread, setSavingChat, createBranchThread } = useAppContext();
+  const { currentThread, setSavingChat, createBranchThread } = useAppContext();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageIndex: number } | null>(null);
   const messages = currentThread?.messages || [];
 

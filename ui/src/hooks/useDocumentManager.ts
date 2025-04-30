@@ -7,7 +7,6 @@ import { getDocumentApi, getDocumentsApi, createDocumentApi, deleteDocumentApi, 
 export function useDocumentManager() {
   const [docs, setDocs] = useState<Document[]>([]);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
-  // const currentDoc = activeDocId ? docs.find(doc => doc.id === activeDocId) ?? null : null;
 
   const [currentDocContent, setCurrentDocContent] = useState<string | null>(null);
 
@@ -75,6 +74,7 @@ export function useDocumentManager() {
   return {
     currentDocContent,
     setCurrentDocContent,
-    saveDocumentState
+    saveDocumentState,
+    updateDocs
   };
 }

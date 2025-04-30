@@ -9,6 +9,9 @@ from models.chat_request import ChatRequest
 from models.chat_message import ChatMessage
 from dotenv import load_dotenv
 from os import getenv
+import logging
+
+log = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -33,6 +36,7 @@ async def chat_completion(req: ChatRequest) -> str:
         {"role": message.role, "content": message.content} for message in req.messages
     ]
 
+    log.info(f"Querying OpenAI for chat completion. \nDocument: {req.document}\nMessages: {messages_parsed}")
     chat_completion: ChatCompletion = await client.chat.completions.create(
         model=MODEL,
         messages=[
@@ -66,6 +70,7 @@ async def edit_document(req: ChatRequest) -> dict:
         {"role": message.role, "content": message.content} for message in req.messages
     ]
 
+    log.info(f"Querying OpenAI for document edit. \nDocument: {req.document}\nMessages: {messages_parsed}")
     response: Response = await client.responses.create(
         model=MODEL,
         input=[

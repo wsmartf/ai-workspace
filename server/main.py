@@ -5,8 +5,9 @@ from fastapi import Body, Query
 from api.memory import add_memory_item
 from api import threads, docs
 from models.send_message_request import SendMessageRequest, SendMessageResponse
-from models.thread_request import NewThreadRequest, UpdateThreadRequest
+from models.thread_request import BranchThreadRequest, NewThreadRequest, UpdateThreadRequest
 from models.doc import Document
+from models.thread import Thread
 import logging
 
 from models.document_request import NewDocumentRequest
@@ -75,16 +76,30 @@ async def update_thread(
 @app.post("/threads/{id}/messages")
 async def send_message(
     id: int,
-    message_request: SendMessageRequest = Body(...),
+    req: SendMessageRequest = Body(...),
     demo: bool = Query(default=False),
 ) -> SendMessageResponse:
     # if demo:
     #     thread = await threads.send_dummy_message(id, message_request.content)
     # else:
-    thread, doc = await threads.send_message(
-        id, message_request.content, is_edit=message_request.is_edit
-    )
+    if req.mode not in ["ask", "edit"]:
+        raise ValueError("Invalid mode. Must be 'ask' or 'edit'.")
+    is_edit = req.mode == "edit"
+
+    thread, doc = await threads.send_message(id, req.content, is_edit=is_edit)
     return SendMessageResponse(thread=thread.model_dump(), document=doc)
+
+
+@app.post("/threads/{parent_thread_id}/branch")
+async def branch_thread(
+    parent_thread_id: int,
+    req: BranchThreadRequest = Body(...),
+):
+    return threads.branch_thread(
+        parent_thread_id,
+        req.last_message_index,
+        req.title
+    ).model_dump()
 
 
 @app.delete("/threads/{id}")

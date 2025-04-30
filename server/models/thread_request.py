@@ -14,3 +14,8 @@ class UpdateThreadRequest(BaseModel):
     title: Optional[str] = None
     messages: Optional[List[dict]] = None
     document_id: Optional[int] = None
+
+
+class BranchThreadRequest(BaseModel):
+    last_message_index: int
+    title: Optional[str] = None

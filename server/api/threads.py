@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 from models.thread import Thread
@@ -6,8 +7,11 @@ from models.chat_message import ChatMessage
 from api.ai import chat_completion, edit_document
 from models.chat_request import ChatRequest
 from models.send_message_request import SendMessageRequest, SendMessageResponse
-from api.docs import get_document
+from api.docs import get_document, update_document
 from models.doc import Document
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def get_thread(id: int) -> Thread:
@@ -32,11 +36,15 @@ def get_all_threads() -> list[Thread]:
             thread_data = json.load(f)
             thread = Thread(**thread_data)
             threads.append(thread.model_dump())
+    
+    # Sort threads by last_active_at, from oldest to newest
+    threads.sort(key=lambda x: x["last_active_at"])
     return threads
 
 
 def save_thread(thread: Thread):
     """Save a thread to data/threads/thread-{id}.json."""
+    thread.last_active_at = datetime.now(timezone.utc).isoformat()
     path = Path("data/threads") / f"thread-{thread.id}.json"
     with open(path, "w") as f:
         json.dump(thread.model_dump(), f)
@@ -58,13 +66,14 @@ def new_thread(
     # Increment the thread ID for the new thread
     new_thread_id = last_thread_id + 1
 
+    created_at = datetime.now(timezone.utc).isoformat()
     # Create a new thread object
     new_thread = Thread(
         id=new_thread_id,
         title=title,
         messages=messages,
-        created_at="2023-10-01T00:00:00Z",
-        last_active_at="2023-10-01T00:00:00Z",
+        created_at=created_at,
+        last_active_at=created_at,
         document_id=document_id,
     )
 
@@ -95,6 +104,7 @@ def update_thread(
     if document_id is not None:
         thread.document_id = document_id
 
+    thread.last_active_at = datetime.now(timezone.utc).isoformat()
     # Save the updated thread to a file
     save_thread(thread)
 
@@ -146,12 +156,18 @@ async def send_message(id: int, message: str, is_edit: bool = False) -> tuple[Th
         messages=thread.messages,
     )
     
-    updated_doc_content = None
+    updated_doc = None
+    message = None
     if is_edit:
+        log.info(f"Editing document {thread.document_id} with message: {message}")
         resp = await edit_document(req)
         message = resp["message"]
-        updated_doc_content = resp["document"]
+        updated_doc: Document = update_document(
+            thread.document_id,
+            content=resp["document"]
+        )
     else:
+        log.info(f"Sending message to LLM: {message}")
         message = await chat_completion(req)
         
     assistant_message = ChatMessage(
@@ -165,7 +181,7 @@ async def send_message(id: int, message: str, is_edit: bool = False) -> tuple[Th
     # Save the updated thread to a file
     save_thread(thread)
 
-    return thread, updated_doc_content
+    return thread, updated_doc
 
 
 def delete_thread(id: int):
@@ -179,16 +195,35 @@ def delete_thread(id: int):
 
 
 """Branch the thread at the first message index."""
-
-
-def branch_thread(parent_thread_id: int, last_message_index: int) -> Thread:
+def branch_thread(parent_thread_id: int, last_message_index: int, title: str = None) -> Thread:
     """Branch a thread at the first message index."""
     parent_thread = get_thread(parent_thread_id)
-    new_thread(
-        title=parent_thread.title,
+    return new_thread(
+        title=title if title else get_branch_title(parent_thread.title),
         messages=parent_thread.messages[0 : last_message_index + 1].copy(),
         document_id=parent_thread.document_id,
     )
+
+def get_branch_title(title: str) -> str:
+    """Add ' (branch)' to the title. if it already has ' (branch)', increment the number.
+    
+    My Thread (branch)
+    My Thread (branch_2)
+    My Thread (branch_3)
+
+    Use regex to match the pattern.
+    """
+    import re
+    match = re.search(r" \(branch(_\d+)?\)", title)
+    if match:
+        if match.group(1):
+            # Increment the number
+            new_title = title[: match.start(1)] + f" (branch_{int(match.group(1)[1:]) + 1})"
+        else:
+            new_title = title[: match.start()] + " (branch_2)"
+    else:
+        new_title = title + " (branch)"
+    return new_title
 
 
 if __name__ == "__main__":

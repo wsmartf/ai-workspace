@@ -5,7 +5,7 @@ from models.thread import Thread
 
 class SendMessageRequest(BaseModel):
     content: str
-    is_edit: Optional[bool] = False
+    mode: str  # mode: edit or ask
 
 
 class SendMessageResponse(BaseModel):

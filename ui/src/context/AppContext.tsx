@@ -5,10 +5,6 @@ import { useThreadManager } from "../hooks/useThreadManager";
 import { Thread, ThreadMessage } from "../types/Thread";
 
 interface AppContextType {
-  // Document
-  currentDocContent: string | null;
-  setCurrentDocContent: React.Dispatch<React.SetStateAction<string | null>>;
-  saveDocumentState: () => Promise<void>;
 
   // Memory
   saveMemory: () => Promise<void>;
@@ -30,6 +26,11 @@ interface AppContextType {
   switchToFirstThread: () => void;
   sendMessage: (message: string) => Promise<void>;
   isActiveThread: (id: string) => boolean;
+
+  // Document
+  currentDocContent: string | null;
+  setCurrentDocContent: React.Dispatch<React.SetStateAction<string | null>>;
+  saveDocumentState: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);

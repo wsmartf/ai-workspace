@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
 from models.doc import Document
+import logging
 
+log = logging.getLogger(__name__)
 
 def get_document(id: int) -> Document:
     """Load a document from data/docs/doc-{id}.json, and return it as a dict."""
@@ -80,6 +82,7 @@ def update_document(
     linked_nodes: list[int] = None,
 ) -> Document:
     """Update an existing document."""
+    log.info(f"Updating document {id}")
     document = get_document(id)
 
     if title:
