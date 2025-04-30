@@ -9,12 +9,12 @@ function App() {
     <>
       <AppProvider>
 
-        <div className="flex h-screen font-sans">
+        <div className="flex h-screen font-sans border-t border-gray-300">
           <ThreadSidebar />
           <div className="flex flex-1">
             <MarkdownEditor />
 
-            <div className="w-px bg-gray-300"></div> {/* Border */}
+            <div className="w-px bg-gray-300"/>
 
             <ChatPanel />
           </div>

@@ -28,7 +28,7 @@ export default function MessageItem({
                 className={`
                     ${isUser ? 'w-3/4 bg-gray-100 border' : 'w-full'}
                     ${isSelected ? 'bg-gray-200' : ''}
-                    p-3 rounded-md
+                    px-3 py-2 rounded-md
                     `}
             >
                 <div className="flex justify-between">
