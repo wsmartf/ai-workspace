@@ -6,7 +6,7 @@ export async function getThreadsApi(): Promise<Thread[]> {
     return apiFetch("/threads");
 }
 
-export async function getThreadApi(id: string): Promise<Thread> {
+export async function getThreadApi(id: number): Promise<Thread> {
     return apiFetch(`/threads/${id}`);
 }
 
@@ -14,12 +14,12 @@ export async function createThreadApi(title: string): Promise<Thread> {
     return apiFetch("/threads", { method: "POST", body: { title } });
 }
 
-export async function deleteThreadApi(id: string): Promise<void> {
+export async function deleteThreadApi(id: number): Promise<void> {
     return apiFetch(`/threads/${id}`, { method: "DELETE" });
 }
 
 export async function sendThreadMessageApi(
-    threadId: string,
+    threadId: number,
     message: string,
     mode: "ask" | "edit"): Promise<SendMessageResponse> {
     return apiFetch(`/threads/${threadId}/messages`,
@@ -33,7 +33,7 @@ export async function sendThreadMessageApi(
 }
 
 export async function branchThreadApi(
-    parentThreadId: string,
+    parentThreadId: number,
     lastMessageIndex: number,
     title?: string): Promise<Thread> {
     const body: { last_message_index: number; title?: string } = {
@@ -55,7 +55,7 @@ export async function updateThreadApi({
     messages,
     documentId,
 }: {
-    id: string;
+    id: number;
     title?: string;
     messages?: ThreadMessage[];
     documentId?: number;
@@ -67,5 +67,11 @@ export async function updateThreadApi({
             messages: messages,
             document_id: documentId,
         },
+    });
+}
+
+export async function updateThreadNodesApi(thread_id: number): Promise<void> {
+    return apiFetch(`/threads/${thread_id}/update-node`, {
+        method: "POST",
     });
 }

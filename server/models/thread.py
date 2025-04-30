@@ -8,4 +8,5 @@ class Thread(BaseModel):
     messages: List[ChatMessage]
     created_at: str
     last_active_at: str
-    document_id: Optional[int]
+    document_id: Optional[int] = None
+    nodes: Optional[list[int]] = Field(default_factory=list)

@@ -5,10 +5,11 @@ export interface ThreadMessage {
 }
 
 export interface Thread {
-    id: string;
+    id: number;
     title: string;
     messages: ThreadMessage[];
     createdAt: string;
     lastActiveAt: string;
     documentId: string;
+    nodes: number;
 }

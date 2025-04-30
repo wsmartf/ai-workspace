@@ -5,11 +5,11 @@ export async function getDocumentsApi(): Promise<Document[]> {
     return apiFetch("/documents");
 }
 
-export async function getDocumentApi(id: string): Promise<Document> {
+export async function getDocumentApi(id: number): Promise<Document> {
     return apiFetch(`/documents/${id}`);
 }
 
-export async function createDocumentApi(title: string, content: string, linkedThreads: string[] = [], linkedNodes: string[] = []): Promise<Document> {
+export async function createDocumentApi(title: string, content: string, linkedThreads: number[] = [], linkedNodes: number[] = []): Promise<Document> {
     return apiFetch("/documents", { method: "POST", body: { title, content, linkedThreads, linkedNodes } });
 }
 
@@ -17,6 +17,6 @@ export async function updateDocumentApi(id: number, content: string = "", title:
     return apiFetch(`/documents/${id}`, { method: "PUT", body: { title, content, linkedThreads, linkedNodes } });
 }
 
-export async function deleteDocumentApi(id: string): Promise<void> {
+export async function deleteDocumentApi(id: number): Promise<void> {
     return apiFetch(`/documents/${id}`, { method: "DELETE" });
 }

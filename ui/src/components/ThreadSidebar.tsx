@@ -24,7 +24,7 @@ export default function ThreadSidebar() {
 
   const handleCreateThread = async () => {
     const thread: Thread = await createThread();
-    setRenamingId(thread.id);
+    setRenamingId(thread.id.toString());
   };
 
   const menuItems: MenuItem[] = [

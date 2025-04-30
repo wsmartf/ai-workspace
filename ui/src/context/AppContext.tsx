@@ -29,7 +29,8 @@ interface AppContextType {
   updateThreadTitle: (id: string, title: string) => Promise<void>;
 
   saveDocument: () => Promise<void>;
-
+  updateNodeForCurrentThread: () => Promise<void>;
+  
   // Document
   currentDocContent: string | null;
   setCurrentDocContent: React.Dispatch<React.SetStateAction<string | null>>;

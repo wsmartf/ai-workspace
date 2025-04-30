@@ -1,21 +1,21 @@
-import asyncio
 from datetime import datetime, timezone
 import json
 from pathlib import Path
 from models.thread import Thread
 from models.chat_message import ChatMessage
-from api.ai import chat_completion, edit_document
+from api.ai import chat_completion, edit_document, gen_node_content
 from models.chat_request import ChatRequest
-from models.send_message_request import SendMessageRequest, SendMessageResponse
 from api.docs import get_document, update_document
 from models.doc import Document
+from models.node import Node
 import logging
+from api.nodes import get_node, create_node, update_node
 
 log = logging.getLogger(__name__)
 
 
 def get_thread(id: int) -> Thread:
-    """Load a thread from data/threads/thread-{id}.json, and return it as a dict."""
+    """Load a thread from data/threads/thread-{id}.json"""
     path = Path("data/threads") / f"thread-{id}.json"
     if not path.exists():
         return {"error": "Thread not found"}
@@ -36,7 +36,7 @@ def get_all_threads() -> list[Thread]:
             thread_data = json.load(f)
             thread = Thread(**thread_data)
             threads.append(thread.model_dump())
-    
+
     # Sort threads by last_active_at, from oldest to newest
     threads.sort(key=lambda x: x["last_active_at"])
     return threads
@@ -87,11 +87,17 @@ def new_thread(
 
 
 def update_thread(
-    id: int, title: str = None, messages: list[dict] = None, document_id: int = None
+    id: int,
+    title: str = None,
+    messages: list[dict] = None,
+    document_id: int = None,
+    nodes: list[int] = None,
 ) -> Thread:
     """Update a thread and save it to data/threads/thread-{id}.json."""
-    if not title and not messages and not document_id:
-        raise ValueError("At least one of title, messages, or document_id must be provided.")
+    if not title and not messages and not document_id and not nodes:
+        raise ValueError(
+            "At least one of title, messages, document_id, or nodes must be provided."
+        )
 
     # Load the existing thread
     thread = get_thread(id)
@@ -103,6 +109,8 @@ def update_thread(
         thread.messages = [ChatMessage(**msg) for msg in messages]
     if document_id is not None:
         thread.document_id = document_id
+    if nodes is not None:
+        thread.nodes = nodes
 
     # Only update last_active_at if messages were modified
     if messages is not None:
@@ -115,39 +123,14 @@ def update_thread(
 
     return thread
 
-# async def send_dummy_message(id: int, message: str) -> Thread:
-#     """Simulate sending a message and return a dummy response."""
-#     # Load the existing thread
-#     thread = get_thread(id)
-#     new_message = ChatMessage(
-#         content=message,
-#         role="user",
-#         created_at="2023-10-01T00:00:00Z"
-#     )
-#     thread.messages.append(new_message)
 
-#     # Simulate a delay and return a dummy response
-#     await asyncio.sleep(5)
-#     dummy_response = "This is a dummy message"
-#     assistant_message = ChatMessage(
-#         content=dummy_response,
-#         role="assistant",
-#         created_at="2023-10-01T00:00:00Z"
-#     )
-#     thread.messages.append(assistant_message)
-#     thread.last_active_at = "2023-10-01T00:00:00Z"
-
-#     # Save the updated thread to a file
-#     save_thread(thread)
-#     return thread
-
-async def send_message(id: int, message: str, is_edit: bool = False) -> tuple[Thread, str]:
+async def send_message(
+    id: int, message: str, is_edit: bool = False
+) -> tuple[Thread, str]:
     # Load the existing thread
     thread = get_thread(id)
     new_message = ChatMessage(
-        content=message,
-        role="user",
-        created_at="2023-10-01T00:00:00Z"
+        content=message, role="user", created_at="2023-10-01T00:00:00Z"
     )
     thread.messages.append(new_message)
 
@@ -155,30 +138,41 @@ async def send_message(id: int, message: str, is_edit: bool = False) -> tuple[Th
     if thread.document_id is not None:
         document_content = get_document(thread.document_id).content
 
-    # Send req to the LLM
-    req = ChatRequest(
-        document=document_content,
-        messages=thread.messages,
-    )
-    
+    nodes: list[Node] = [get_node(node_id) for node_id in thread.nodes]
+
+    # Trim the messages based on the presence of nodes and their updated_at timestamps
+    trimmed_messages = thread.messages  # Default to all messages
+    if nodes:
+        # Sort nodes by their updated_at timestamp and get the most recent one
+        most_recent_node = max(nodes, key=lambda x: x.updated_at)
+        # Find the index of the first message created after the most recent node
+        last_message_index = next(
+            (
+                i
+                for i, message in enumerate(thread.messages)
+                if message.created_at > most_recent_node.updated_at
+            ),
+            len(thread.messages),
+        )
+        # Ensure at least the latest 5 messages are included
+        start_index = max(0, min(last_message_index, len(thread.messages) - 5))
+        trimmed_messages = thread.messages[start_index:]
+
     updated_doc = None
     message = None
     if is_edit:
         log.info(f"Editing document {thread.document_id} with message: {message}")
-        resp = await edit_document(req)
+        resp = await edit_document(trimmed_messages, document_content, nodes)
         message = resp["message"]
         updated_doc: Document = update_document(
-            thread.document_id,
-            content=resp["document"]
+            thread.document_id, content=resp["document"]
         )
     else:
         log.info(f"Sending message to LLM: {message}")
-        message = await chat_completion(req)
-        
+        message = await chat_completion(trimmed_messages, document_content, nodes)
+
     assistant_message = ChatMessage(
-        content=message,
-        role="assistant",
-        created_at="2023-10-01T00:00:00Z"
+        content=message, role="assistant", created_at="2023-10-01T00:00:00Z"
     )
     thread.messages.append(assistant_message)
     thread.last_active_at = datetime.now(timezone.utc).isoformat()
@@ -200,7 +194,11 @@ def delete_thread(id: int):
 
 
 """Branch the thread at the first message index."""
-def branch_thread(parent_thread_id: int, last_message_index: int, title: str = None) -> Thread:
+
+
+def branch_thread(
+    parent_thread_id: int, last_message_index: int, title: str = None
+) -> Thread:
     """Branch a thread at the first message index."""
     parent_thread = get_thread(parent_thread_id)
     return new_thread(
@@ -209,9 +207,10 @@ def branch_thread(parent_thread_id: int, last_message_index: int, title: str = N
         document_id=parent_thread.document_id,
     )
 
+
 def get_branch_title(title: str) -> str:
     """Add ' (branch)' to the title. if it already has ' (branch)', increment the number.
-    
+
     My Thread (branch)
     My Thread (branch_2)
     My Thread (branch_3)
@@ -219,16 +218,99 @@ def get_branch_title(title: str) -> str:
     Use regex to match the pattern.
     """
     import re
+
     match = re.search(r" \(branch(_\d+)?\)", title)
     if match:
         if match.group(1):
             # Increment the number
-            new_title = title[: match.start(1)] + f" (branch_{int(match.group(1)[1:]) + 1})"
+            new_title = (
+                title[: match.start(1)] + f" (branch_{int(match.group(1)[1:]) + 1})"
+            )
         else:
             new_title = title[: match.start()] + " (branch_2)"
     else:
         new_title = title + " (branch)"
     return new_title
+
+
+def get_thread_nodes(thread_id: int) -> list[Node]:
+    """Get all nodes linked to a thread."""
+    log.info(f"Getting thread nodes for thread {thread_id}")
+    thread = get_thread(thread_id)
+    nodes = []
+    for node_id in thread.nodes:
+        try:
+            node = get_node(node_id)
+            nodes.append(node)
+        except FileNotFoundError:
+            log.warning(f"Node {node_id} not found")
+    return nodes
+
+
+async def gen_node(thread_id: int) -> Node:
+    """Generate a node object.
+
+    If node doesn't exist:
+        Create a new node.
+        Generate the context by calling LLM with all the thread messages + document context.
+    If one exists:
+        Generate the new context by calling LLM with thread messages since the last one that was
+        included in the node + doc context + previous node context.
+        To determine the last message, we can use the last_active_at of the thread, and compare it
+        to the updated_at of the node.
+
+    For now, assume all threads have at most 1 node. Use the first one (if it exists).
+    """
+    log.info(f"Generating node for thread {thread_id}")
+    thread = get_thread(thread_id)
+    thread_doc = get_document(thread.document_id) if thread.document_id else None
+    node_docs = [thread.document_id] if thread.document_id else []
+
+    nodes: list[Node] = get_thread_nodes(thread_id)
+    if len(nodes) == 0:
+        # Create a new node
+        resp = await gen_node_content(thread.messages, thread_doc.content)
+        node = create_node(
+            title=resp["title"],
+            content=resp["content"],
+            related_nodes=[],
+            related_docs=node_docs,
+            related_threads=[thread.id],
+            tags=[],
+        )
+        # Update the thread with the new node
+        update_thread(
+            id=thread.id,
+            nodes=[node.id],
+        )
+    else:
+        # Update the existing node
+        node = nodes[0]
+
+        # loop through the thread messages and find the last one that was included in the node
+        last_message_index = 0
+        for i, message in enumerate(thread.messages):
+            if message.created_at > node.updated_at:
+                last_message_index = i
+                break
+        # Get the trimmed messages
+        trimmed_messages = thread.messages[last_message_index:]
+
+        resp = await gen_node_content(
+            trimmed_messages,
+            thread_doc.content,
+            node.content,
+        )
+        update_node(
+            id=node.id,
+            title=resp["title"],
+            content=resp["content"],
+            related_nodes=node.related_nodes,
+            related_docs=node.related_docs,
+            related_threads=[thread.id],
+            tags=node.tags,
+        )
+    return node
 
 
 if __name__ == "__main__":

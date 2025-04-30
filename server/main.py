@@ -2,7 +2,6 @@ from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Body, Query
-from api.memory import add_memory_item
 from api import threads, docs
 from models.send_message_request import SendMessageRequest, SendMessageResponse
 from models.thread_request import BranchThreadRequest, NewThreadRequest, UpdateThreadRequest
@@ -25,12 +24,12 @@ app.add_middleware(
 )
 
 
-@app.post("/memory/add")
-async def add_to_memory(
-    title: str = Body(...), content: str = Body(...), tags: List[str] = Body(default=[])
-):
-    item = add_memory_item(title, content, tags)
-    return {"status": "ok", "item": item}
+# @app.post("/memory/add")
+# async def add_to_memory(
+#     title: str = Body(...), content: str = Body(...), tags: List[str] = Body(default=[])
+# ):
+#     item = add_memory_item(title, content, tags)
+#     return {"status": "ok", "item": item}
 
 
 @app.get("/threads/{id}")
@@ -150,4 +149,12 @@ async def update_document(
 @app.delete("/documents/{id}")
 async def delete_document(id: int):
     docs.delete_document(id)
+    return {"status": "ok"}
+
+
+@app.post("/threads/{thread_id}/update-node")
+async def update_thread_nodes(
+    thread_id: int,
+):
+    await threads.gen_node(thread_id)
     return {"status": "ok"}

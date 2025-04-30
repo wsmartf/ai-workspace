@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Thread } from '../types/Thread';
 import log from '../utils/logger';
-import { getThreadsApi, createThreadApi, deleteThreadApi, branchThreadApi, sendThreadMessageApi, updateThreadApi } from '../utils/threadsApi';
+import { getThreadsApi, createThreadApi, deleteThreadApi, branchThreadApi, sendThreadMessageApi, updateThreadApi, updateThreadNodesApi } from '../utils/threadsApi';
 import { useDocumentManager } from './useDocumentManager';
 
 
 export function useThreadManager() {
     const [threadsById, setThreadsById] = useState<Record<string, Thread>>({});
-    const [threadOrder, setThreadOrder] = useState<string[]>([]);
-    const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+    const [threadOrder, setThreadOrder] = useState<number[]>([]);
+    const [activeThreadId, setActiveThreadId] = useState<number | null>(null);
     const currentThread = activeThreadId ? threadsById[activeThreadId] : null;
     const [loading, setLoading] = useState<boolean>(false);
 
@@ -40,7 +40,7 @@ export function useThreadManager() {
         }
     }
 
-    const updateThreadDocumentId = async (threadId: string, documentId: number) => {
+    const updateThreadDocumentId = async (threadId: number, documentId: number) => {
         log.info(`Updating thread document ID for thread ID: ${threadId} to document ID: ${documentId}`);
         const thread = threadsById[threadId];
         if (thread) {
@@ -53,13 +53,13 @@ export function useThreadManager() {
         }
     }
 
-    const updateThreadTitle = async (threadId: string, newTitle: string) => {
+    const updateThreadTitle = async (threadId: number, newTitle: string) => {
         if (!newTitle.trim()) return; // Prevent empty titles
         await updateThreadApi({ id: threadId, title: newTitle });
         await updateThreads(); // Refresh threads
     };
 
-    const updateThreads = async (): Promise<string[]> => {
+    const updateThreads = async (): Promise<number[]> => {
         const threadsArray: Thread[] = await getThreadsApi();
         const idMap = Object.fromEntries(threadsArray.map(thread => [thread.id, thread]));
         const order = threadsArray.map(thread => thread.id);
@@ -80,10 +80,10 @@ export function useThreadManager() {
         }
     }
 
-    const deleteThread = async (id: string) => {
+    const deleteThread = async (id: number) => {
         await deleteThreadApi(id);
         await updateThreads();
-        if (id === activeThreadId) {
+        if (activeThreadId === id) {
             switchToFirstThread();
         }
     };
@@ -99,7 +99,7 @@ export function useThreadManager() {
         setActiveThreadId(thread.id);
     };
 
-    const switchToThread = async (threadId: string) => {
+    const switchToThread = async (threadId: number) => {
         await updateThreads();
         if (threadOrder.includes(threadId)) {
             setActiveThreadId(threadId);
@@ -171,8 +171,28 @@ export function useThreadManager() {
         }
     };
 
-    const isActiveThread = (threadId: string) => {
+    const isActiveThread = (threadId: number) => {
         return threadId === activeThreadId;
+    };
+
+    const updateThreadNode = async (threadId: number) => {
+        log.info(`Updating thread node for thread ID: ${threadId}`);
+        try {
+            await updateThreadNodesApi(threadId);
+            log.info(`Thread node updated successfully for thread ID: ${threadId}`);
+        } catch (error) {
+            log.error(`Failed to update thread node for thread ID: ${threadId}`, error);
+        }
+    };
+
+    const updateNodeForCurrentThread = async () => {
+        if (currentThread) {
+            log.info(`Updating node for current thread ID: ${currentThread.id}`);
+            await updateThreadNode(currentThread.id);
+        } else {
+            log.warn('No current thread to update.');
+        }
+        updateThreads();
     };
 
     return {
@@ -191,5 +211,6 @@ export function useThreadManager() {
         setCurrentDocContent,
         currentDocContent,
         updateThreadTitle,
+        updateNodeForCurrentThread
     };
 }

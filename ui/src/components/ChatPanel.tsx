@@ -2,15 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import MessageItem from '../components/MessageItem';
 import { MenuItem, ContextMenu } from '../components/ContextMenu';
-
-
+import { UpdateNodesButton } from './UpdateNodesButton';
 
 export function ChatPanel() {
   return (
     <>
       <div className="flex flex-col flex-1">
-        <MessageList/>
-        <ChatInput/>
+        <MessageList />
+        <ChatInput />
       </div>
     </>
   );
@@ -28,7 +27,6 @@ function MessageList() {
       messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
     }
   }, [messages]);
-
 
   if (!messages || messages.length === 0) {
     return (
@@ -102,7 +100,7 @@ function ChatInput() {
   const { sendMessage, loading } = useAppContext();
 
   return (
-    <div className="p-4">
+    <div className="p-4 flex items-center">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -111,14 +109,16 @@ function ChatInput() {
           sendMessage(input);
           e.currentTarget.reset();
         }}
+        className="flex flex-1"
       >
         <input
           name="msg"
           disabled={loading}
           placeholder="Type a message..."
-          className="w-full border rounded px-3 py-2"
+          className="w-full border rounded-l px-3 py-2 focus:outline-none"
         />
       </form>
+      <UpdateNodesButton />
     </div>
   );
 }
