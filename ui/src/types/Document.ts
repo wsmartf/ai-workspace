@@ -1,9 +1,9 @@
 export interface Document {
-    id: string;
+    id: number;
     title: string;
     content: string;
     createdAt: string;
     lastModifiedAt: string;
-    linkedThreads: string[];
-    linkedNodes: string[];
+    linkedThreads: number[];
+    linkedNodes: number[];
 }

@@ -13,7 +13,7 @@ export async function createDocumentApi(title: string, content: string, linkedTh
     return apiFetch("/documents", { method: "POST", body: { title, content, linkedThreads, linkedNodes } });
 }
 
-export async function updateDocumentApi(id: string, content: string = "", title: string = "", linkedThreads: string[] = [], linkedNodes: string[] = []): Promise<Document> {
+export async function updateDocumentApi(id: number, content: string = "", title: string = "", linkedThreads: number[] = [], linkedNodes: number[] = []): Promise<Document> {
     return apiFetch(`/documents/${id}`, { method: "PUT", body: { title, content, linkedThreads, linkedNodes } });
 }
 

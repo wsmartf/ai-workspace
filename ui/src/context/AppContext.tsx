@@ -27,10 +27,11 @@ interface AppContextType {
   sendMessage: (message: string) => Promise<void>;
   isActiveThread: (id: string) => boolean;
 
+  saveDocument: () => Promise<void>;
+
   // Document
   currentDocContent: string | null;
   setCurrentDocContent: React.Dispatch<React.SetStateAction<string | null>>;
-  saveDocumentState: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);

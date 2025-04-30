@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Thread } from '../types/Thread';
 import log from '../utils/logger';
-import { getThreadsApi, createThreadApi, deleteThreadApi, branchThreadApi, sendThreadMessageApi } from '../utils/threadsApi';
+import { getThreadsApi, createThreadApi, deleteThreadApi, branchThreadApi, sendThreadMessageApi, updateThreadApi } from '../utils/threadsApi';
 import { useDocumentManager } from './useDocumentManager';
 
 
@@ -12,7 +12,7 @@ export function useThreadManager() {
     const currentThread = activeThreadId ? threadsById[activeThreadId] : null;
     const [loading, setLoading] = useState<boolean>(false);
 
-    const { saveDocumentState, currentDocContent, setCurrentDocContent, updateDocs } = useDocumentManager();
+    const { saveDocumentState, currentDocContent, setCurrentDocContent, updateDocs, activeDocId } = useDocumentManager();
 
     useEffect(() => {
         async function initializeThreads() {
@@ -27,7 +27,31 @@ export function useThreadManager() {
         const thread: Thread = await createThreadApi(title);
         await updateThreads();
         setActiveThreadId(thread.id);
+        
     };
+
+    const saveDocument = async () => {
+        if (currentDocContent && activeThreadId) {
+            log.info(`Saving document state for thread ID: ${activeThreadId}`);
+            await saveDocumentState();
+            await updateThreadDocumentId(activeThreadId, activeDocId!);
+        } else {
+            log.warn('No document content to save or no active thread.');
+        }
+    }
+
+    const updateThreadDocumentId = async (threadId: string, documentId: number) => {
+        log.info(`Updating thread document ID for thread ID: ${threadId} to document ID: ${documentId}`);
+        const thread = threadsById[threadId];
+        if (thread) {
+            await updateThreadApi({
+                id: threadId, 
+                documentId: documentId
+            });
+        } else {
+            throw new Error(`Thread with ID ${threadId} not found.`);
+        }
+    }
 
     const updateThreads = async (): Promise<string[]> => {
         const threadsArray: Thread[] = await getThreadsApi();
@@ -62,7 +86,7 @@ export function useThreadManager() {
         log.info(`Creating branch thread from parent thread ID: ${activeThreadId} at message index: ${messageIndex}`);
         
         // First save the current document state
-        await saveDocumentState();
+        await saveDocument();
 
         const thread: Thread = await branchThreadApi(activeThreadId!, messageIndex, title);
         await updateThreads();
@@ -87,7 +111,8 @@ export function useThreadManager() {
         setLoading(true);
 
         try {
-            await saveDocumentState();
+            await saveDocument();
+
             
             let mode: "edit" | "ask";
             if (message.startsWith('/edit')) {
@@ -124,6 +149,7 @@ export function useThreadManager() {
             await Promise.all([apiCall, delay]);
 
             await updateThreads();
+            
 
             // Update the document with the response, if it was an edit
             if (mode === "edit") {
@@ -155,8 +181,7 @@ export function useThreadManager() {
         switchToFirstThread,
         sendMessage,
         isActiveThread,
-
-        saveDocumentState,
+        saveDocument,
         setCurrentDocContent,
         currentDocContent,
     };

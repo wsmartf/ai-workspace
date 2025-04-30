@@ -10,7 +10,6 @@ class NewThreadRequest(BaseModel):
 
 
 class UpdateThreadRequest(BaseModel):
-    id: int
     title: Optional[str] = None
     messages: Optional[List[dict]] = None
     document_id: Optional[int] = None

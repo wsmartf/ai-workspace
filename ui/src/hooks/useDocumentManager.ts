@@ -6,7 +6,7 @@ import { getDocumentApi, getDocumentsApi, createDocumentApi, deleteDocumentApi, 
 
 export function useDocumentManager() {
   const [docs, setDocs] = useState<Document[]>([]);
-  const [activeDocId, setActiveDocId] = useState<string | null>(null);
+  const [activeDocId, setActiveDocId] = useState<number | null>(null);
 
   const [currentDocContent, setCurrentDocContent] = useState<string | null>(null);
 
@@ -59,7 +59,7 @@ export function useDocumentManager() {
     }
   }
 
-  const updateDocument = async (id: string, content: string) => {
+  const updateDocument = async (id: number, content: string) => {
     log.info(`Updating document with ID: ${id}`);
     await updateDocumentApi(id, content);
     await updateDocs();
@@ -75,6 +75,7 @@ export function useDocumentManager() {
     currentDocContent,
     setCurrentDocContent,
     saveDocumentState,
-    updateDocs
+    updateDocs,
+    activeDocId
   };
 }

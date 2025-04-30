@@ -60,12 +60,13 @@ async def new_thread(
     return thread.model_dump()
 
 
-@app.post("/threads/{id}")
+@app.put("/threads/{id}")
 async def update_thread(
+    id: int,
     req: UpdateThreadRequest = Body(...),
 ):
     thread = threads.update_thread(
-        req.id,
+        id,
         req.title,
         req.messages,
         req.document_id,

@@ -1,4 +1,4 @@
-import { Thread } from '../types/Thread';
+import { Thread, ThreadMessage } from '../types/Thread';
 import { SendMessageResponse } from '../types/ThreadMessageResponse';
 import { apiFetch } from './api';
 
@@ -47,4 +47,25 @@ export async function branchThreadApi(
             method: "POST",
             body: body,
         });
+}
+
+export async function updateThreadApi({
+    id,
+    title,
+    messages,
+    documentId,
+}: {
+    id: string;
+    title?: string;
+    messages?: ThreadMessage[];
+    documentId?: number;
+}): Promise<Thread> {
+    return apiFetch(`/threads/${id}`, {
+        method: "PUT",
+        body: {
+            title: title,
+            messages: messages,
+            document_id: documentId,
+        },
+    });
 }

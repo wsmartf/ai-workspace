@@ -28,11 +28,11 @@ function MarkdownTextArea() {
 }
 
 function EditorToolbar() {
-  const { saveDocumentState } = useAppContext();
+  const { saveDocument } = useAppContext();
 
   return (
     <div className="p-2 border-b border-gray-300 flex gap-2">
-      <button onClick={saveDocumentState} className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">💾 Save</button>
+      <button onClick={saveDocument} className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">💾 Save</button>
     </div>
   );
 }
