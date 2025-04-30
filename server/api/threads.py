@@ -44,10 +44,9 @@ def get_all_threads() -> list[Thread]:
 
 def save_thread(thread: Thread):
     """Save a thread to data/threads/thread-{id}.json."""
-    thread.last_active_at = datetime.now(timezone.utc).isoformat()
     path = Path("data/threads") / f"thread-{thread.id}.json"
     with open(path, "w") as f:
-        json.dump(thread.model_dump(), f)
+        json.dump(thread.model_dump(), f, indent=4)
     print(f"Thread {thread.id} saved to {path}")
 
 
@@ -91,10 +90,11 @@ def update_thread(
     id: int, title: str = None, messages: list[dict] = None, document_id: int = None
 ) -> Thread:
     """Update a thread and save it to data/threads/thread-{id}.json."""
+    if not title and not messages and not document_id:
+        raise ValueError("At least one of title, messages, or document_id must be provided.")
+
     # Load the existing thread
     thread = get_thread(id)
-    if isinstance(thread, dict) and "error" in thread:
-        return thread  # Return error if thread not found
 
     # Update the thread's attributes
     if title is not None:
@@ -104,7 +104,12 @@ def update_thread(
     if document_id is not None:
         thread.document_id = document_id
 
-    thread.last_active_at = datetime.now(timezone.utc).isoformat()
+    # Only update last_active_at if messages were modified
+    if messages is not None:
+        thread.last_active_at = datetime.now(timezone.utc).isoformat()
+    else:
+        log.info("Skipping last_active_at update because messages were not modified.")
+
     # Save the updated thread to a file
     save_thread(thread)
 
@@ -176,7 +181,7 @@ async def send_message(id: int, message: str, is_edit: bool = False) -> tuple[Th
         created_at="2023-10-01T00:00:00Z"
     )
     thread.messages.append(assistant_message)
-    thread.last_active_at = "2023-10-01T00:00:00Z"
+    thread.last_active_at = datetime.now(timezone.utc).isoformat()
 
     # Save the updated thread to a file
     save_thread(thread)

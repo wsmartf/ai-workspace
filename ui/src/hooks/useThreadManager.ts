@@ -27,7 +27,7 @@ export function useThreadManager() {
         const thread: Thread = await createThreadApi(title);
         await updateThreads();
         setActiveThreadId(thread.id);
-        
+        return thread;
     };
 
     const saveDocument = async () => {
@@ -52,6 +52,12 @@ export function useThreadManager() {
             throw new Error(`Thread with ID ${threadId} not found.`);
         }
     }
+
+    const updateThreadTitle = async (threadId: string, newTitle: string) => {
+        if (!newTitle.trim()) return; // Prevent empty titles
+        await updateThreadApi({ id: threadId, title: newTitle });
+        await updateThreads(); // Refresh threads
+    };
 
     const updateThreads = async (): Promise<string[]> => {
         const threadsArray: Thread[] = await getThreadsApi();
@@ -163,12 +169,6 @@ export function useThreadManager() {
         } finally {
             setLoading(false);
         }
-    };
-
-    const updateThreadTitle = async (threadId: string, newTitle: string) => {
-        if (!newTitle.trim()) return; // Prevent empty titles
-        await updateThreadApi({ id: threadId, title: newTitle });
-        await updateThreads(); // Refresh threads
     };
 
     const isActiveThread = (threadId: string) => {

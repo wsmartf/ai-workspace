@@ -19,7 +19,7 @@ interface AppContextType {
   loading: boolean;
   threadsById: Record<string, Thread>;
   threadOrder: string[];
-  createThread: (title?: string) => Promise<void>;
+  createThread: (title?: string) => Promise<Thread>;
   deleteThread: (id: string) => Promise<void>;
   createBranchThread: (messageIndex: number) => Promise<void>;
   switchToThread: (id: string) => void;
