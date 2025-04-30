@@ -1,17 +1,19 @@
-from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Body, Query
 from api import threads, docs
 from models.send_message_request import SendMessageRequest, SendMessageResponse
-from models.thread_request import BranchThreadRequest, NewThreadRequest, UpdateThreadRequest
-from models.doc import Document
-from models.thread import Thread
+from models.thread_request import (
+    BranchThreadRequest,
+    NewThreadRequest,
+    UpdateThreadRequest,
+)
 import logging
 
 from models.document_request import NewDocumentRequest
 
 logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -22,14 +24,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# @app.post("/memory/add")
-# async def add_to_memory(
-#     title: str = Body(...), content: str = Body(...), tags: List[str] = Body(default=[])
-# ):
-#     item = add_memory_item(title, content, tags)
-#     return {"status": "ok", "item": item}
 
 
 @app.get("/threads/{id}")
@@ -79,14 +73,16 @@ async def send_message(
     req: SendMessageRequest = Body(...),
     demo: bool = Query(default=False),
 ) -> SendMessageResponse:
-    # if demo:
-    #     thread = await threads.send_dummy_message(id, message_request.content)
-    # else:
     if req.mode not in ["ask", "edit"]:
         raise ValueError("Invalid mode. Must be 'ask' or 'edit'.")
     is_edit = req.mode == "edit"
 
-    thread, doc = await threads.send_message(id, req.content, is_edit=is_edit)
+    # TODO: Maybe no need to return the document in the response
+    if demo:
+        log.info("Sending dummy message")
+        thread, doc = await threads.send_dummy_message(id, req.content, is_edit=is_edit)
+    else:
+        thread, doc = await threads.send_message(id, req.content, is_edit=is_edit)
     return SendMessageResponse(thread=thread.model_dump(), document=doc)
 
 
@@ -96,9 +92,7 @@ async def branch_thread(
     req: BranchThreadRequest = Body(...),
 ):
     return threads.branch_thread(
-        parent_thread_id,
-        req.last_message_index,
-        req.title
+        parent_thread_id, req.last_message_index, req.title
     ).model_dump()
 
 

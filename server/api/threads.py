@@ -4,12 +4,12 @@ from pathlib import Path
 from models.thread import Thread
 from models.chat_message import ChatMessage
 from api.ai import chat_completion, edit_document, gen_node_content
-from models.chat_request import ChatRequest
 from api.docs import get_document, update_document
 from models.doc import Document
 from models.node import Node
 import logging
 from api.nodes import get_node, create_node, update_node
+import asyncio
 
 log = logging.getLogger(__name__)
 
@@ -124,9 +124,42 @@ def update_thread(
     return thread
 
 
+async def send_dummy_message(
+    id: int, message: str, is_edit: bool = False
+) -> tuple[Thread, Document]:
+    """Mock sending a message, and add a dummy response and delay. Handle is_edit by modifying the document."""
+    thread = get_thread(id)
+    new_message = ChatMessage(
+        content=message, role="user", created_at="2023-10-01T00:00:00Z"
+    )
+    thread.messages.append(new_message)
+
+    await asyncio.sleep(2)  # Simulate a delay
+
+    dummy_response = "This is a dummy response."
+
+    doc = None
+    if is_edit and thread.document_id is not None:
+        document = get_document(thread.document_id)
+        timestamp = datetime.now(timezone.utc).isoformat()
+        updated_content = f"MOCK EDIT - {timestamp}\n{document.content}"
+        doc = update_document(thread.document_id, content=updated_content)
+
+    assistant_message = ChatMessage(
+        content=dummy_response, role="assistant", created_at="2023-10-01T00:00:00Z"
+    )
+    thread.messages.append(assistant_message)
+    thread.last_active_at = datetime.now(timezone.utc).isoformat()
+
+    # Save the updated thread to a file
+    save_thread(thread)
+
+    return thread, doc
+
+
 async def send_message(
     id: int, message: str, is_edit: bool = False
-) -> tuple[Thread, str]:
+) -> tuple[Thread, Document]:
     # Load the existing thread
     thread = get_thread(id)
     new_message = ChatMessage(

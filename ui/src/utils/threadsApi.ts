@@ -2,6 +2,8 @@ import { Thread, ThreadMessage } from '../types/Thread';
 import { SendMessageResponse } from '../types/ThreadMessageResponse';
 import { apiFetch } from './api';
 
+const DEMO_MODE = true;
+
 export async function getThreadsApi(): Promise<Thread[]> {
     return apiFetch("/threads");
 }
@@ -22,7 +24,11 @@ export async function sendThreadMessageApi(
     threadId: number,
     message: string,
     mode: "ask" | "edit"): Promise<SendMessageResponse> {
-    return apiFetch(`/threads/${threadId}/messages`,
+    var url = `/threads/${threadId}/messages`;
+    if (DEMO_MODE) {
+        url += "?demo=true";
+    }
+    return apiFetch(url,
         {
             method: "POST",
             body: {
