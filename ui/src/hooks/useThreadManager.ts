@@ -165,6 +165,12 @@ export function useThreadManager() {
         }
     };
 
+    const updateThreadTitle = async (threadId: string, newTitle: string) => {
+        if (!newTitle.trim()) return; // Prevent empty titles
+        await updateThreadApi({ id: threadId, title: newTitle });
+        await updateThreads(); // Refresh threads
+    };
+
     const isActiveThread = (threadId: string) => {
         return threadId === activeThreadId;
     };
@@ -184,5 +190,6 @@ export function useThreadManager() {
         saveDocument,
         setCurrentDocContent,
         currentDocContent,
+        updateThreadTitle,
     };
 }

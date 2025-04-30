@@ -13,7 +13,6 @@ interface ContextMenuProps {
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, items, onClose }) => {
-    // Close the context menu on any click outside
     useEffect(() => {
         const handleClick = () => onClose();
         window.addEventListener("click", handleClick);

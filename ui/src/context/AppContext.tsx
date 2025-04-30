@@ -26,6 +26,7 @@ interface AppContextType {
   switchToFirstThread: () => void;
   sendMessage: (message: string) => Promise<void>;
   isActiveThread: (id: string) => boolean;
+  updateThreadTitle: (id: string, title: string) => Promise<void>;
 
   saveDocument: () => Promise<void>;
 
@@ -45,6 +46,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     ...document,
     ...memory,
     ...threads,
+    updateThreadTitle: threads.updateThreadTitle,
   };
 
   return (
