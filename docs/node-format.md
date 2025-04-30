@@ -72,14 +72,14 @@ Optionally extensible later with:
 
 ## 🔒 Why This Design Works for the Long Run
 
-| Design Decision | Why it scales |
-|-----------------|---------------|
-| **Flat JSON per node** | Easy to evolve to database or indexed graph |
-| **Separate summary + metadata** | Lets you add embeddings, diffs, rewriters |
-| **source/related fields** | Future-proof for graph traversal, linking |
-| **UUID-based IDs** | Easy to merge across projects later |
-| **Editable tags** | Enables hybrid search and semantic grouping |
-| **Manual creation flow** | Can later be automated (agent-driven node creation, background summarization)
+| Design Decision                 | Why it scales                                                                 |
+| ------------------------------- | ----------------------------------------------------------------------------- |
+| **Flat JSON per node**          | Easy to evolve to database or indexed graph                                   |
+| **Separate summary + metadata** | Lets you add embeddings, diffs, rewriters                                     |
+| **source/related fields**       | Future-proof for graph traversal, linking                                     |
+| **UUID-based IDs**              | Easy to merge across projects later                                           |
+| **Editable tags**               | Enables hybrid search and semantic grouping                                   |
+| **Manual creation flow**        | Can later be automated (agent-driven node creation, background summarization) |
 
 ---
 

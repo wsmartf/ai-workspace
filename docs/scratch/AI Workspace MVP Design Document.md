@@ -1,5 +1,3 @@
-[[README]]
-
 ### Goal
 Build a minimal, usable version of the AI-native thinking workspace. Focus on clarity, structure, and persistent collaboration between users and the assistant — without over-engineering. Prioritize features that help users write, explore, and organize ideas in a clean, structured environment.
 
