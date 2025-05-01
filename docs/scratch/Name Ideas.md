@@ -1,3 +1,0 @@
-AI NativeAI
-InnateAI
-Neuron
