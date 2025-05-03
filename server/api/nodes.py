@@ -83,23 +83,30 @@ def create_node(
 
 def update_node(
     id: int,
-    title: str,
-    content: str,
-    related_nodes: list[int] = [],
-    related_docs: list[int] = [],
-    related_threads: list[int] = [],
-    tags: list[str] = [],
+    title: str = None,
+    content: str = None,
+    related_nodes: list[int] = None,
+    related_docs: list[int] = None,
+    related_threads: list[int] = None,
+    tags: list[str] = None,
 ) -> Node:
     """Update an existing node."""
     node = get_node(id)
-    node.title = title
-    node.content = content
-    node.related_nodes = related_nodes
-    node.related_docs = related_docs
-    node.related_threads = related_threads
-    node.tags = tags
+    if title is None and content is None and related_nodes is None and related_docs is None and related_threads is None and tags is None:
+        raise ValueError("At least one field must be provided for update.")
+
+    if title is not None:
+        node.title = title
+    if content is not None:
+        node.content = content
+    if related_nodes is not None:
+        node.related_nodes = related_nodes
+    if related_docs is not None:
+        node.related_docs = related_docs
+    if related_threads is not None:
+        node.related_threads = related_threads
+    if tags is not None:
+        node.tags = tags
     node.updated_at = datetime.now(timezone.utc).isoformat()
-
     save_node(node)
-
     return node

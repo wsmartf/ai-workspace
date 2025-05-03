@@ -53,7 +53,10 @@ def save_thread(thread: Thread):
 def new_thread(
     title: str, messages: list[ChatMessage] = [], document_id: int = None
 ) -> Thread:
-    """Create a new thread and save it to data/threads/thread-{id}.json."""
+    """Create a new thread and save it to data/threads/thread-{id}.json.
+    
+    Also create a new empty node for the thread.
+    """
     # Load the last thread ID from the last thread file
     path = Path("data/threads") / "last_thread_id.txt"
     if path.exists():
@@ -75,6 +78,17 @@ def new_thread(
         last_active_at=created_at,
         document_id=document_id,
     )
+
+    new_node = create_node(
+        title=f"Empty Node for Thread {title}",
+        content="",
+        related_nodes=[],
+        related_docs=[document_id] if document_id else [],
+        related_threads=[new_thread_id],
+    )
+
+    # Update the thread with the new node ID
+    new_thread.nodes = [new_node.id]
 
     # Save the new thread to a file
     save_thread(new_thread)
@@ -232,13 +246,38 @@ def delete_thread(id: int):
 def branch_thread(
     parent_thread_id: int, last_message_index: int, title: str = None
 ) -> Thread:
-    """Branch a thread at the first message index."""
+    """Branch a thread at the first message index.
+    
+    Create a node for the child thread, and a two-way link between the the nodes (if a node exists for this thread).
+    """
     parent_thread = get_thread(parent_thread_id)
-    return new_thread(
+    parent_nodes: list[Node] = get_thread_nodes(parent_thread_id)
+
+    branch_thread = new_thread(
         title=title if title else get_branch_title(parent_thread.title),
         messages=parent_thread.messages[0 : last_message_index + 1].copy(),
         document_id=parent_thread.document_id,
     )
+    branch_node = get_node(branch_thread.nodes[0])
+
+    for parent_node in parent_nodes:
+        # Link the parent node to the child node, if not already linked
+        if branch_node.id not in parent_node.related_nodes:
+            parent_node.related_nodes.append(branch_node.id)
+            update_node(
+                id=parent_node.id,
+                related_nodes=parent_node.related_nodes,
+            )
+        # Link the child node to the parent node, if not already linked
+        if parent_node.id not in branch_node.related_nodes:
+            branch_node.related_nodes.append(parent_node.id)
+            update_node(
+                id=branch_node.id,
+                related_nodes=branch_node.related_nodes,
+            )
+            
+    return branch_thread
+
 
 
 def get_branch_title(title: str) -> str:
@@ -302,6 +341,7 @@ async def gen_node(thread_id: int) -> Node:
     nodes: list[Node] = get_thread_nodes(thread_id)
     if len(nodes) == 0:
         # Create a new node
+        # TODO: It should never be empty, bc we create a node when creating a thread.
         resp = await gen_node_content(thread.messages, thread_doc.content)
         node = create_node(
             title=resp["title"],
