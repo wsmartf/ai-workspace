@@ -15,12 +15,16 @@
         "label": "Start Frontend",
         "type": "shell",
         "command": "cd ui && npm run tauri dev",
-        "problemMatcher": [],
+        "problemMatcher": []
       },
       {
         "label": "Run Full Dev Stack",
-        "dependsOn": ["Start Backend", "Start Frontend"],
-        "dependsOrder": "parallel"
+        "dependsOn": [
+          "Start Backend",
+          "Start Frontend"
+        ],
+        "dependsOrder": "parallel",
+        "problemMatcher": [],
       }
     ]
   }
