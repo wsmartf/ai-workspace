@@ -149,6 +149,7 @@ async def delete_document(id: int):
 @app.post("/threads/{thread_id}/update-node")
 async def update_thread_nodes(
     thread_id: int,
+    demo: bool = Query(default=False),
 ):
-    await threads.gen_node(thread_id)
+    await threads.gen_node(thread_id, demo=demo)
     return {"status": "ok"}

@@ -1,30 +1,30 @@
+// ThreadSidebar.tsx
 import { useState } from "react";
-import { useAppContext } from "../context/AppContext";
+import { useWorkspaceContext } from "../context/WorkspaceProvider";
 import ThreadItem from "./ThreadItem";
 import { ContextMenu, MenuItem } from "./ContextMenu";
 import { Thread } from "../types/Thread";
 
 export default function ThreadSidebar() {
   const {
-    threadsById,
-    threadOrder,
-    switchToThread,
+    state: { threads, currentThreadId },
+    switchThread,
     createThread,
     deleteThread,
-    activeThreadId,
     updateThreadTitle,
-  } = useAppContext();
+  } = useWorkspaceContext();
 
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; threadId: number } | null>(null);
 
   const handleRename = async (id: number, title: string) => {
-    await updateThreadTitle(id, title);
+    updateThreadTitle(id, title);
+    setRenamingId(null);
   };
 
   const handleCreateThread = async () => {
-    const thread: Thread = await createThread();
-    setRenamingId(thread.id);
+    const newThread: Thread = await createThread();
+    setRenamingId(newThread.id);
   };
 
   const menuItems: MenuItem[] = [
@@ -43,20 +43,20 @@ export default function ThreadSidebar() {
     <div className="w-64 bg-gray-100 border-r h-full flex flex-col relative">
       <div className="px-4 py-3 font-bold text-gray-800 border-b">Threads</div>
       <div className="flex-1 overflow-auto">
-        {threadOrder.map((id) => (
+        {threads.map((thread) => (
           <ThreadItem
-            key={id}
-            thread={threadsById[id]}
-            isActive={activeThreadId === id}
-            isRenaming={renamingId === id}
-            onClick={() => switchToThread(id)}
-            onDelete={() => deleteThread(id)}
-            onRename={(title) => handleRename(id, title)}
+            key={thread.id}
+            thread={thread}
+            isActive={currentThreadId === thread.id}
+            isRenaming={renamingId === thread.id}
+            onClick={() => switchThread(thread.id)}
+            onDelete={() => deleteThread(thread.id)}
+            onRename={(title) => handleRename(thread.id, title)}
             onRightClick={(e) => {
               e.preventDefault();
-              setContextMenu({ x: e.clientX, y: e.clientY, threadId: id });
+              setContextMenu({ x: e.clientX, y: e.clientY, threadId: thread.id });
             }}
-            startRenaming={() => setRenamingId(id)}
+            startRenaming={() => setRenamingId(thread.id)}
             stopRenaming={() => setRenamingId(null)}
           />
         ))}

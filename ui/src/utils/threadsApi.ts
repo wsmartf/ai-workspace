@@ -2,6 +2,7 @@ import { Thread, ThreadMessage } from '../types/Thread';
 import { SendMessageResponse } from '../types/ThreadMessageResponse';
 import { apiFetch } from './api';
 import { mapApiResponseToThread, mapApiResponseToDocument } from './mappers.ts';
+import log from '../utils/logger';
 
 const DEMO_MODE = true;
 
@@ -40,10 +41,18 @@ export async function sendThreadMessageApi(
                 mode: mode
             }
         });
-    return {
+    log.info("sendThreadMessageApi response", resp);
+    var result: SendMessageResponse = {
         thread: mapApiResponseToThread(resp.thread),
-        document: mapApiResponseToDocument(resp.document),
-    };
+    }
+    if (mode === "edit") {
+        if (resp.document) {
+            result.document = mapApiResponseToDocument(resp.document);
+        } else {
+            throw new Error("Document not found in response");
+        }
+    }
+    return result;
 }
 
 export async function branchThreadApi(
@@ -87,7 +96,9 @@ export async function updateThreadApi({
 }
 
 export async function updateThreadNodesApi(thread_id: number): Promise<void> {
-    await apiFetch(`/threads/${thread_id}/update-node`, {
-        method: "POST",
-    });
+    var url = `/threads/${thread_id}/update-node`;
+    if (DEMO_MODE) {
+        url += "?demo=true";
+    }
+    await apiFetch(url, { method: "POST" });
 }

@@ -54,7 +54,7 @@ def new_thread(
     title: str, messages: list[ChatMessage] = [], document_id: int = None
 ) -> Thread:
     """Create a new thread and save it to data/threads/thread-{id}.json.
-    
+
     Also create a new empty node for the thread.
     """
     # Load the last thread ID from the last thread file
@@ -247,7 +247,7 @@ def branch_thread(
     parent_thread_id: int, last_message_index: int, title: str = None
 ) -> Thread:
     """Branch a thread at the first message index.
-    
+
     Create a node for the child thread, and a two-way link between the the nodes (if a node exists for this thread).
     """
     parent_thread = get_thread(parent_thread_id)
@@ -277,7 +277,6 @@ def branch_thread(
             )
 
     return branch_thread
-
 
 
 def get_branch_title(title: str) -> str:
@@ -319,7 +318,7 @@ def get_thread_nodes(thread_id: int) -> list[Node]:
     return nodes
 
 
-async def gen_node(thread_id: int) -> Node:
+async def gen_node(thread_id: int, demo: bool = False) -> Node:
     """Generate a node object.
 
     If node doesn't exist:
@@ -342,7 +341,13 @@ async def gen_node(thread_id: int) -> Node:
     if len(nodes) == 0:
         # Create a new node
         # TODO: It should never be empty, bc we create a node when creating a thread.
-        resp = await gen_node_content(thread.messages, thread_doc.content)
+        if demo:
+            resp = {
+                "title": f"Demo New node for Thread {thread.title}",
+                "content": f"Demo New content for Thread {thread.title}",
+            }
+        else:
+            resp = await gen_node_content(thread.messages, thread_doc.content)
         node = create_node(
             title=resp["title"],
             content=resp["content"],
@@ -369,11 +374,17 @@ async def gen_node(thread_id: int) -> Node:
         # Get the trimmed messages
         trimmed_messages = thread.messages[last_message_index:]
 
-        resp = await gen_node_content(
-            trimmed_messages,
-            thread_doc.content,
-            node.content,
-        )
+        if demo:
+            resp = {
+                "title": f"Demo Updated Node for Thread {thread.title}",
+                "content": f"Demo Updated content for thread {thread.title}",
+            }
+        else:
+            resp = await gen_node_content(
+                trimmed_messages,
+                thread_doc.content,
+                node.content,
+            )
         update_node(
             id=node.id,
             title=resp["title"],

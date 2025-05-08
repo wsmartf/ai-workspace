@@ -1,12 +1,12 @@
 import { MarkdownEditor } from './components/MarkdownEditor';
 import { ChatPanel } from './components/ChatPanel';
 import ThreadSidebar from './components/ThreadSidebar';
-import { AppProvider } from "./context/AppContext";
+import { WorkspaceProvider } from './context/WorkspaceProvider';
 
 function App() {
   return (
     <>
-      <AppProvider>
+      <WorkspaceProvider>
 
         <div className="flex h-screen font-sans border-t border-gray-300">
           <ThreadSidebar />
@@ -19,7 +19,7 @@ function App() {
           </div>
         </div>
 
-      </AppProvider>
+      </WorkspaceProvider>
     </>
   );
 }

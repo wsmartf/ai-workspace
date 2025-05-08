@@ -1,71 +1,70 @@
+// ChatPanel.tsx
 import { useState, useEffect, useRef } from 'react';
-import { useAppContext } from '../context/AppContext';
 import MessageItem from '../components/MessageItem';
 import { MenuItem, ContextMenu } from '../components/ContextMenu';
-import { UpdateNodesButton } from './UpdateNodesButton';
+import { useUpdateNodes } from '../hooks/useUpdateNodes';
+import { useWorkspaceContext } from '../context/WorkspaceProvider';
 
 export function ChatPanel() {
   return (
-    <>
-      <div className="flex flex-col flex-1">
-        <MessageList />
-        <ChatInput />
-      </div>
-    </>
+    <div className="flex flex-col flex-1">
+      <MessageList />
+      <ChatInput />
+    </div>
   );
 }
 
 function MessageList() {
-  // Handle messages
-  const { currentThread, createBranchThread } = useAppContext();
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageIndex: number } | null>(null);
-  const messages = currentThread?.messages || [];
+  const { currentThread, createBranchThread } = useWorkspaceContext();
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    messageIndex: number;
+  } | null>(null);
 
-  const messageListRef = useRef<HTMLDivElement>(null);
+  const messages = currentThread?.messages || [];
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // auto‑scroll
   useEffect(() => {
-    if (messageListRef.current) {
-      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
     }
   }, [messages]);
 
-  if (!messages || messages.length === 0) {
+  if (messages.length === 0) {
     return (
-      <div className="flex-1 overflow-y-auto p-7 ">
+      <div className="flex-1 overflow-y-auto p-7">
         <div className="text-gray-500">No messages yet.</div>
       </div>
     );
   }
 
-  // Handle context menu
-  const handleContextMenu = (x: number, y: number, index: number) => {
-    setContextMenu({ x, y, messageIndex: index });
-  };
-
   const menuItems: MenuItem[] = [
     {
-      label: "Branch from here",
+      label: 'Branch from here',
       onClick: () => {
-        if (contextMenu) {
-          createBranchThread(contextMenu.messageIndex);
-          setContextMenu(null);
-        }
+        if (!contextMenu) return;
+        createBranchThread(contextMenu.messageIndex);
+        setContextMenu(null);
       },
     },
   ];
 
   return (
     <>
-      <div ref={messageListRef} className="flex-1 overflow-y-auto p-4">
-        {messages.map((message, index) => (
+      <div ref={listRef} className="flex-1 overflow-y-auto p-4">
+        {messages.map((msg, i) => (
           <MessageItem
-            key={index}
-            message={message}
-            index={index}
-            onShowContextMenu={handleContextMenu}
-            isSelected={contextMenu?.messageIndex === index}
+            key={i}
+            message={msg}
+            index={i}
+            onShowContextMenu={(x, y) => setContextMenu({ x, y, messageIndex: i })}
+            isSelected={contextMenu?.messageIndex === i}
           />
         ))}
       </div>
+
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
@@ -79,28 +78,48 @@ function MessageList() {
 }
 
 function ChatInput() {
-  const { sendChatMessage, loading } = useAppContext();
+  const {
+    sendChat,
+    state: { sending },
+  } = useWorkspaceContext();
+
+  const { isUpdating, errorMessage, handleNodeUpdate } = useUpdateNodes();
 
   return (
-    <div className="p-4 flex items-center">
+    <div className="p-4 flex items-center border-t">
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          const input = (e.currentTarget.elements.namedItem('msg') as HTMLInputElement).value;
+          const form = e.currentTarget; // Store a reference to the form
+          const input = (form.elements.namedItem('msg') as HTMLInputElement).value.trim();
           if (!input) return;
-          sendChatMessage(input);
-          e.currentTarget.reset();
+          form.reset(); // Use the stored reference
+          await sendChat(input);
         }}
         className="flex flex-1"
       >
         <input
           name="msg"
-          disabled={loading}
-          placeholder="Type a message..."
-          className="w-full border rounded-l px-3 py-2 focus:outline-none"
+          disabled={sending}
+          placeholder={"Type a message..."}
+          className={`w-full border rounded-l px-3 py-2 focus:outline-none ${sending ? "bg-gray-200" : ""
+            }`}
         />
       </form>
-      <UpdateNodesButton />
+
+      <button
+        onClick={handleNodeUpdate}
+        disabled={isUpdating}
+        className="ml-2 bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+      >
+        {isUpdating ? 'Updating...' : 'Update Nodes'}
+      </button>
+
+      {(errorMessage) && (
+        <div className="ml-3 text-sm">
+          {errorMessage && <span className="text-red-600">{errorMessage}</span>}
+        </div>
+      )}
     </div>
   );
 }

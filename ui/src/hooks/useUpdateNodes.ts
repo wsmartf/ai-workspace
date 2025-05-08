@@ -1,27 +1,30 @@
+import { useWorkspaceContext } from '../context/WorkspaceProvider';
 import { useState } from 'react';
-import { useAppContext } from '../context/AppContext';
 
 export const useUpdateNodes = () => {
-    const [isUpdating, setIsUpdating] = useState(false);
-    const [dialogMessage, setDialogMessage] = useState("");
-    const [errorMessage, setErrorMessage] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-    const { updateThreadNodes } = useAppContext();
+  const { updateThreadNodes } = useWorkspaceContext();
 
-    const handleNodeUpdate = async () => {
-        setIsUpdating(true);
-        setDialogMessage("Updating nodes, please wait...");
-        setErrorMessage("");
-        try {
-            await updateThreadNodes();
-            setDialogMessage("Nodes updated successfully! ✅");
-        } catch (error) {
-            console.error("Failed to update nodes:", error);
-            setErrorMessage("Failed to update nodes. Please try again.");
-        } finally {
-            setTimeout(() => setIsUpdating(false), 1500);
-        }
-    };
+  const handleNodeUpdate = async () => {
+    setIsUpdating(true);
+    setErrorMessage("");
+    try {
+      await updateThreadNodes();
+      setTimeout(() => {
+        setIsUpdating(false);
+      }, 1000);
 
-    return { isUpdating, dialogMessage, errorMessage, handleNodeUpdate };
+    } catch (err) {
+      console.error(err);
+      setErrorMessage("Failed to update nodes. Try again.");
+      setIsUpdating(false);
+      setTimeout(() => {
+        setErrorMessage(""); // Clear the error message after the delay
+      }, 2000);
+    }
+  };
+
+  return { isUpdating, errorMessage, handleNodeUpdate };
 };

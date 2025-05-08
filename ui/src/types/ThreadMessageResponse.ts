@@ -3,5 +3,5 @@ import { Thread } from './Thread';
 
 export interface SendMessageResponse {
     thread: Thread;
-    document: Document;
+    document?: Document;
 }
