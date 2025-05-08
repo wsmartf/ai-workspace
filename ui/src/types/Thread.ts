@@ -10,6 +10,5 @@ export interface Thread {
     messages: ThreadMessage[];
     createdAt: string;
     lastActiveAt: string;
-    documentId: string;
-    nodes: number;
+    documentId: number | null;
 }

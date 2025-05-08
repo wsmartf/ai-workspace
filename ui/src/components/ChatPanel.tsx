@@ -17,7 +17,7 @@ export function ChatPanel() {
 
 function MessageList() {
   // Handle messages
-  const { currentThread, setSavingChat, createBranchThread } = useAppContext();
+  const { currentThread, createBranchThread } = useAppContext();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageIndex: number } | null>(null);
   const messages = currentThread?.messages || [];
 
@@ -51,24 +51,6 @@ function MessageList() {
         }
       },
     },
-    {
-      label: "Save to memory",
-      onClick: () => {
-        if (contextMenu) {
-          setSavingChat(messages[contextMenu.messageIndex]);
-          setContextMenu(null);
-        }
-      },
-    },
-    // {
-    //   label: "Copy",
-    //   onClick: () => {
-    //     if (contextMenu) {
-    //       navigator.clipboard.writeText(activeMessages[contextMenu.messageIndex].content);
-    //       setContextMenu(null);
-    //     }
-    //   },
-    // }
   ];
 
   return (
@@ -97,7 +79,7 @@ function MessageList() {
 }
 
 function ChatInput() {
-  const { sendMessage, loading } = useAppContext();
+  const { sendChatMessage, loading } = useAppContext();
 
   return (
     <div className="p-4 flex items-center">
@@ -106,7 +88,7 @@ function ChatInput() {
           e.preventDefault();
           const input = (e.currentTarget.elements.namedItem('msg') as HTMLInputElement).value;
           if (!input) return;
-          sendMessage(input);
+          sendChatMessage(input);
           e.currentTarget.reset();
         }}
         className="flex flex-1"

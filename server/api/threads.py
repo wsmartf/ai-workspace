@@ -256,7 +256,7 @@ def branch_thread(
     branch_thread = new_thread(
         title=title if title else get_branch_title(parent_thread.title),
         messages=parent_thread.messages[0 : last_message_index + 1].copy(),
-        document_id=parent_thread.document_id,
+        document_id=None,
     )
     branch_node = get_node(branch_thread.nodes[0])
 
@@ -275,7 +275,7 @@ def branch_thread(
                 id=branch_node.id,
                 related_nodes=branch_node.related_nodes,
             )
-            
+
     return branch_thread
 
 

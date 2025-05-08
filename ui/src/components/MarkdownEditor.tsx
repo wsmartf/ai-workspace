@@ -5,7 +5,7 @@ import { useAppContext } from '../context/AppContext';
 import { SaveButton } from "../components/SaveButton";
 
 export function MarkdownEditor() {
-  const { currentDocContent } = useAppContext();
+  const { documentContent } = useAppContext();
   const [isEditMode, setIsEditMode] = useState(true);
 
   return (
@@ -16,28 +16,47 @@ export function MarkdownEditor() {
           onToggleEditPreview={() => setIsEditMode(!isEditMode)}
         />
       </div>
-      {isEditMode ? <MarkdownTextArea /> : <MarkdownPreviewer doc={currentDocContent || ''} />}
+      {isEditMode ? <MarkdownTextArea /> : <MarkdownPreviewer doc={documentContent || ''} />}
     </div>
   );
 }
 
 function MarkdownTextArea() {
-  const { currentDocContent, setCurrentDocContent } = useAppContext();
+  const { documentContent, setDocumentContent } = useAppContext();
   return (
     <textarea
-      value={currentDocContent || ''}
-      onChange={(e) => setCurrentDocContent(e.target.value)}
+      value={documentContent || ''}
+      onChange={(e) => setDocumentContent(e.target.value)}
       placeholder="Write your doc here..."
       className="flex-1 p-4 font-mono border-none outline-none resize-none"
     />
   );
 }
 
-function EditorToolbar({ isEditMode, onToggleEditPreview }: { isEditMode: boolean; onToggleEditPreview: () => void }) {
+export function EditorToolbar({ isEditMode, onToggleEditPreview }: { isEditMode: boolean; onToggleEditPreview: () => void }) {
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const { saveDocumentState } = useAppContext();
+
+  const handleSave = async () => {
+    try {
+      await saveDocumentState();
+      setShowConfirmation(true);
+      setTimeout(() => setShowConfirmation(false), 1000); // Hide after 1 second
+    } catch (error) {
+      console.error("Failed to save document:", error);
+      alert("Failed to save document. Please try again.");
+    }
+  };
+
   return (
-    <div className="flex gap-2 items-center">
-      <SaveButton />
+    <div className="flex gap-2 items-center relative">
+      <SaveButton onSave={handleSave} />
       <ToggleEditPreviewButton isEditMode={isEditMode} onToggle={onToggleEditPreview} />
+      {showConfirmation && (
+        <span className="left-full ml-2 text-green-500 text-sm">
+          Saved successfully!
+        </span>
+      )}
     </div>
   );
 }

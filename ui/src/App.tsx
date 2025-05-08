@@ -1,4 +1,3 @@
-import MemoryPrompt from "./components/MemoryPrompt";
 import { MarkdownEditor } from './components/MarkdownEditor';
 import { ChatPanel } from './components/ChatPanel';
 import ThreadSidebar from './components/ThreadSidebar';
@@ -19,8 +18,6 @@ function App() {
             <ChatPanel />
           </div>
         </div>
-
-        <MemoryPrompt />
 
       </AppProvider>
     </>

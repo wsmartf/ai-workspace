@@ -11,20 +11,20 @@ export default function ThreadSidebar() {
     switchToThread,
     createThread,
     deleteThread,
-    isActiveThread,
+    activeThreadId,
     updateThreadTitle,
   } = useAppContext();
 
-  const [renamingId, setRenamingId] = useState<string | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; threadId: string } | null>(null);
+  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; threadId: number } | null>(null);
 
-  const handleRename = async (id: string, title: string) => {
+  const handleRename = async (id: number, title: string) => {
     await updateThreadTitle(id, title);
   };
 
   const handleCreateThread = async () => {
     const thread: Thread = await createThread();
-    setRenamingId(thread.id.toString());
+    setRenamingId(thread.id);
   };
 
   const menuItems: MenuItem[] = [
@@ -47,7 +47,7 @@ export default function ThreadSidebar() {
           <ThreadItem
             key={id}
             thread={threadsById[id]}
-            isActive={isActiveThread(id)}
+            isActive={activeThreadId === id}
             isRenaming={renamingId === id}
             onClick={() => switchToThread(id)}
             onDelete={() => deleteThread(id)}

@@ -1,23 +1,27 @@
 import { Thread, ThreadMessage } from '../types/Thread';
 import { SendMessageResponse } from '../types/ThreadMessageResponse';
 import { apiFetch } from './api';
+import { mapApiResponseToThread, mapApiResponseToDocument } from './mappers.ts';
 
 const DEMO_MODE = true;
 
 export async function getThreadsApi(): Promise<Thread[]> {
-    return apiFetch("/threads");
+    const apiResponse = await apiFetch("/threads");
+    return apiResponse.map(mapApiResponseToThread);
 }
 
 export async function getThreadApi(id: number): Promise<Thread> {
-    return apiFetch(`/threads/${id}`);
+    const apiResponse = await apiFetch(`/threads/${id}`);
+    return mapApiResponseToThread(apiResponse);
 }
 
 export async function createThreadApi(title: string): Promise<Thread> {
-    return apiFetch("/threads", { method: "POST", body: { title } });
+    const apiResponse = await apiFetch("/threads", { method: "POST", body: { title } });
+    return mapApiResponseToThread(apiResponse);
 }
 
 export async function deleteThreadApi(id: number): Promise<void> {
-    return apiFetch(`/threads/${id}`, { method: "DELETE" });
+    await apiFetch(`/threads/${id}`, { method: "DELETE" });
 }
 
 export async function sendThreadMessageApi(
@@ -28,7 +32,7 @@ export async function sendThreadMessageApi(
     if (DEMO_MODE) {
         url += "?demo=true";
     }
-    return apiFetch(url,
+    const resp = await apiFetch(url,
         {
             method: "POST",
             body: {
@@ -36,6 +40,10 @@ export async function sendThreadMessageApi(
                 mode: mode
             }
         });
+    return {
+        thread: mapApiResponseToThread(resp.thread),
+        document: mapApiResponseToDocument(resp.document),
+    };
 }
 
 export async function branchThreadApi(
@@ -48,11 +56,12 @@ export async function branchThreadApi(
     if (title) {
         body.title = title;
     }
-    return apiFetch(`/threads/${parentThreadId}/branch`,
+    const resp = await apiFetch(`/threads/${parentThreadId}/branch`,
         {
             method: "POST",
             body: body,
         });
+    return mapApiResponseToThread(resp);
 }
 
 export async function updateThreadApi({
@@ -66,7 +75,7 @@ export async function updateThreadApi({
     messages?: ThreadMessage[];
     documentId?: number;
 }): Promise<Thread> {
-    return apiFetch(`/threads/${id}`, {
+    const resp = await apiFetch(`/threads/${id}`, {
         method: "PUT",
         body: {
             title: title,
@@ -74,10 +83,11 @@ export async function updateThreadApi({
             document_id: documentId,
         },
     });
+    return mapApiResponseToThread(resp);
 }
 
 export async function updateThreadNodesApi(thread_id: number): Promise<void> {
-    return apiFetch(`/threads/${thread_id}/update-node`, {
+    await apiFetch(`/threads/${thread_id}/update-node`, {
         method: "POST",
     });
 }

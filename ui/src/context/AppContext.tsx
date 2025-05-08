@@ -1,53 +1,60 @@
-import React, { createContext, useContext } from "react";
-import { useDocumentManager } from "../hooks/useDocumentManager";
-import { useMemory } from "../hooks/useMemory";
-import { useThreadManager } from "../hooks/useThreadManager";
-import { Thread, ThreadMessage } from "../types/Thread";
+import React, { createContext, useContext, useEffect } from "react";
+import { Thread } from "../types/Thread";
+import { Document } from "../types/Document";
+import log from "../utils/logger";
+import { useWorkspace } from "../hooks/useWorkspace";
 
 interface AppContextType {
 
-  // Memory
-  saveMemory: () => Promise<void>;
-  savingChat: ThreadMessage | null;
-  setSavingChat: React.Dispatch<React.SetStateAction<ThreadMessage | null>>;
-  title: string | null;
-  setTitle: React.Dispatch<React.SetStateAction<string | null>>;
-  cancelSave: () => Promise<void>;
-
-  // Threads
   currentThread: Thread | null;
   loading: boolean;
-  threadsById: Record<string, Thread>;
-  threadOrder: string[];
+  threadsById: Record<number, Thread>;
+  threadOrder: number[];
   createThread: (title?: string) => Promise<Thread>;
-  deleteThread: (id: string) => Promise<void>;
+  deleteThread: (id: number) => Promise<void>;
   createBranchThread: (messageIndex: number) => Promise<void>;
-  switchToThread: (id: string) => void;
-  switchToFirstThread: () => void;
-  sendMessage: (message: string) => Promise<void>;
-  isActiveThread: (id: string) => boolean;
-  updateThreadTitle: (id: string, title: string) => Promise<void>;
+  switchToFirstThread: () => Promise<number>;
+  switchToThread: (id: number) => Promise<void>;
+  activeThreadId: number | null;
+  updateThreadTitle: (id: number, title: string) => Promise<void>;
+  updateThreadNodes: () => Promise<void>;
 
-  saveDocument: () => Promise<void>;
-  updateNodeForCurrentThread: () => Promise<void>;
-  
   // Document
-  currentDocContent: string | null;
-  setCurrentDocContent: React.Dispatch<React.SetStateAction<string | null>>;
+  documentId: number | null;
+  documentTitle: string | null;
+  documentContent: string | null;
+  setDocumentId: (id: number) => void;
+  setDocumentTitle: (title: string) => void;
+  setDocumentContent: (content: string) => void;
+  loadDocument: (id: number) => Promise<Document>;
+  reloadDocument: () => Promise<Document | null>;
+  createDocument: (title: string, content: string) => Promise<Document>;
+  updateDocumentTitle: (title: string) => Promise<void>;
+  updateDocumentContent: (content: string) => Promise<void>;
+  getDocuments: () => Promise<Document[]>;
+
+  // Global state
+  sendChatMessage: (message: string) => Promise<void>;
+  saveDocumentState: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
-  const document = useDocumentManager();
-  const memory = useMemory();
-  const threads = useThreadManager();
+  const workspace = useWorkspace();
+
+  useEffect(() => {
+    async function init() {
+      log.info("Initializing AppContext...");
+      await workspace.switchToFirstThread();
+    }
+    init();
+  }
+    , []);
 
   const value: AppContextType = {
-    ...document,
-    ...memory,
-    ...threads,
-    updateThreadTitle: threads.updateThreadTitle,
+    ...workspace,
+    ...workspace.docs
   };
 
   return (

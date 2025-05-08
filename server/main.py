@@ -10,7 +10,7 @@ from models.thread_request import (
 )
 import logging
 
-from models.document_request import NewDocumentRequest
+from models.document_request import NewDocumentRequest, UpdateDocumentRequest
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -128,7 +128,7 @@ async def create_document(
 @app.put("/documents/{id}")
 async def update_document(
     id: int,
-    req: NewDocumentRequest = Body(...),
+    req: UpdateDocumentRequest = Body(...),
 ):
     document = docs.update_document(
         id,

@@ -10,7 +10,6 @@ class NewDocumentRequest(BaseModel):
 
 
 class UpdateDocumentRequest(BaseModel):
-    id: int
     title: Optional[str] = None
     content: Optional[str] = None
     linked_threads: Optional[list[int]] = None

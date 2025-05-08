@@ -2,12 +2,12 @@ import React from 'react';
 import { useUpdateNodes } from '../hooks/useUpdateNodes';
 
 export const UpdateNodesButton: React.FC = () => {
-    const { isUpdating, dialogMessage, errorMessage, handleUpdate } = useUpdateNodes();
+    const { isUpdating, dialogMessage, errorMessage, handleNodeUpdate } = useUpdateNodes();
 
     return (
         <div className="relative">
             <button
-                onClick={handleUpdate}
+                onClick={handleNodeUpdate}
                 className="px-3 py-2 border bg-gray-200 rounded-r hover:bg-gray-300"
                 disabled={isUpdating}
             >
