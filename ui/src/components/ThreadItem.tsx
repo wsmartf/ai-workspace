@@ -65,7 +65,7 @@ export default function ThreadItem({
       )}
       <button
         onClick={onDelete}
-        className="text-red-500 px-2 hover:text-red-700"
+        className="text-gray-400 px-2 hover:text-gray-700"
       >
         x
       </button>
