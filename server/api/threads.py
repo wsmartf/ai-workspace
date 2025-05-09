@@ -37,8 +37,7 @@ def get_all_threads() -> list[Thread]:
             thread = Thread(**thread_data)
             threads.append(thread.model_dump())
 
-    # Sort threads by last_active_at, from oldest to newest
-    threads.sort(key=lambda x: x["last_active_at"])
+    threads.sort(key=lambda x: x["created_at"])
     return threads
 
 
