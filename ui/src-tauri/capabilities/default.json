@@ -21,7 +21,9 @@
       "allow": [
         "**/*"
       ]
-    }
+    },
+    "dialog:default",
+    "fs:default"
   ],
   "path": {
     "all": true

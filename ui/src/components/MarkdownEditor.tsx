@@ -3,6 +3,9 @@ import ReactMarkdown from 'react-markdown';
 import 'github-markdown-css';
 import { SaveButton } from "../components/SaveButton";
 import { useWorkspaceContext } from '../context/WorkspaceProvider';
+import { FileOpenButton, useFileOpen, useFileSave } from "./FileBrowser";
+import { save as tauriSave } from '@tauri-apps/plugin-dialog';
+import { writeFile } from '@tauri-apps/plugin-fs';
 
 export function MarkdownEditor() {
   const { state: { document } } = useWorkspaceContext();
@@ -38,19 +41,34 @@ function MarkdownTextArea() {
 
 export function EditorToolbar({ isEditMode, onToggleEditPreview }: { isEditMode: boolean; onToggleEditPreview: () => void }) {
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [filePath, setFilePath] = useState<string | null>(null);
   const {
-    state: { docDirty },
-    saveDocument
+    state: { docDirty, document },
+    saveDocument,
+    setDocumentContent
   } = useWorkspaceContext();
 
+  const handleFileLoaded = (content: string, path: string) => {
+    setDocumentContent(content);
+    setFilePath(path);
+  };
+
+  const handleOpenFile = useFileOpen(handleFileLoaded);
+  const saveToFile = useFileSave(filePath, setFilePath);
+
   const handleSave = async () => {
-      await saveDocument();
+      await saveDocument(); // existing backend save
+      // --- Local file save logic ---
+      if (document?.content) {
+        await saveToFile(document.content, document.title ? `${document.title}.md` : 'Untitled.md');
+      }
       setShowConfirmation(true);
       setTimeout(() => setShowConfirmation(false), 1000); // Hide after 1 second
   };
 
   return (
     <div className="flex gap-2 items-center relative">
+      <FileOpenButton onClick={handleOpenFile} />
       {isEditMode && docDirty && <SaveButton onSave={handleSave} />}
       <ToggleEditPreviewButton isEditMode={isEditMode} onToggle={onToggleEditPreview} />
       {showConfirmation && (
