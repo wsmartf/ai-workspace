@@ -34,6 +34,12 @@ chmod +x ./scripts/setup.sh
 ./scripts/setup.sh
 ```
 
+3. Export your OpenAI API key as an environment variable:
+```
+export OPENAI_API_KEY=your_openai_api_key
+```
+
+
 ## Run the Application
 
 ### Backend
