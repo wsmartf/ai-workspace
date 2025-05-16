@@ -95,7 +95,7 @@ This is an early prototype — I'm actively collecting feedback on:
 - Missing features
 - Cool ideas
 
-Feel free to open an [issue](https://github.com/YOUR_USERNAME/ai-workspace/issues), submit a pull request, or reach out directly.
+Feel free to open an [issue](https://github.com/wsmartf/ai-workspace/issues), submit a pull request, or reach out directly.
 
 ---
 
