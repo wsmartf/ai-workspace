@@ -15,8 +15,11 @@ from models.node import Node
 log = logging.getLogger(__name__)
 
 load_dotenv()
+OPENAI_API_KEY = getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise RuntimeError("Missing OpenAI API key. Set OPENAI_API_KEY in .env or as an environment variable.")
 
-client = AsyncOpenAI(api_key=getenv("OPENAI_API_KEY"))
+client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 MODEL = "gpt-4.1-nano"
 
 
