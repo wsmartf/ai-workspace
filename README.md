@@ -1,56 +1,104 @@
-### **AI-Native Thinking Workspace**
+# AI-Native Thinking Workspace
 
-This project is an AI-native workspace designed for structured, creative, and exploratory thinking. It combines documents, conversations, and memory into a single environment — tailored for people who think in branches, revise constantly, and collaborate with AI as a long-term partner.
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Made with Tauri](https://img.shields.io/badge/built%20with-tauri-1f425f.svg)](https://tauri.app)
 
-Traditional AI tools like ChatGPT are linear and forgetful, while productivity tools like Notion and Obsidian lack real-time collaboration, contextual reasoning, and memory. This product bridges that gap. It’s built for how people actually work: jumping between ideas, starting messy, iterating toward clarity, and needing persistent structure along the way.
+An experimental tool for structured, creative, and exploratory thinking — designed to integrate documents, conversations, and memory into a single seamless environment.
 
-At its core, the tool introduces a few key components:
+Traditional AI tools like ChatGPT are powerful but forgetful. Productivity tools like Notion or Obsidian are flexible but lack context awareness and real-time reasoning. This workspace bridges that gap.
 
-- **Documents**: Markdown files that evolve as plans, specs, essays, or knowledge bases.
-- **AI Threads**: Persistent, branchable chats to explore sub-ideas, alternatives, or tangents.
-- **Memory**: A shared, editable knowledge layer where the assistant stores insights and can retrieve past reasoning.
-- **Projects**: Workspaces that group related docs, threads, and memory together in one place.
+## Core Concepts
 
-The result is a system where AI can help you develop and refine complex ideas. You can explore different paths in separate threads, promote useful responses into live documents, and ask the assistant to recall or summarize past conversations.
+At its heart, the system introduces four core components:
 
-# Run Locally
+- **📄 Documents** — Evolving markdown files for writing, planning, specs, or notes.
+- **💬 AI Threads** — Persistent, branchable chat conversations for exploring sub-ideas, alternatives, or rabbit holes.
+- **🧠 Memory** — A shared, editable knowledge layer that AI can recall, update, and use for context-aware reasoning.
+- **📁 Projects** — Logical workspaces that organize docs, threads, and memory around a central idea.
 
-## Dev Requirements
+This architecture enables a workflow where you can:
+- Jump between ideas like branches
+- Promote useful AI responses into live documents
+- Summon past conversations and insights into context
+- Work with AI as a long-term thinking partner
 
-- Node.js (v18+ recommended)
-- Rust (https://rust-lang.org/tools/install)
+![Screenshot](./docs/app.png)
 
-## Setup
-1. Clone the repository and navigate to the project directory
+---
 
-2. Install dependencies:
+## Try It Out
+
+### Requirements
+
+- Python 3.11+
+- Node.js v18+
+- Rust (for building the Tauri desktop app)  
+  https://rust-lang.org/tools/install
+
+---
+
+### Setup Instructions
+
+#### 1. Clone the repo
+```
+git clone https://github.com/wsmartf/ai-workspace.git
+cd ai-workspace
+```
+#### 2. Install backend dependencies (FastAPI)
 ```
 cd server
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
+#### 3. Install frontend dependencies (Tauri + React)
 ```
-cd ui
+cd ../ui
 chmod +x ./scripts/setup.sh
 ./scripts/setup.sh
 ```
+#### 4. Set your OpenAI API key  
+You can either:
 
-3. Export your OpenAI API key as an environment variable:
+- Create a `.env` file with this line:
 ```
-export OPENAI_API_KEY=your_openai_api_key
+OPENAI_API_KEY=sk-...
+```
+- Or export it directly:
+```
+export OPENAI_API_KEY=sk-...
 ```
 
+---
 
-## Run the Application
+## ▶Running the App
 
-### Backend
+#### Backend (FastAPI)
 ```
 cd server
 uvicorn main:app --reload --port 11434
 ```
 
-### Frontend
+#### Frontend (Tauri Desktop App)
 ```
 cd ui
 npm run tauri dev
 ```
 
+---
+
+## Feedback Welcome
+
+This is an early prototype — I'm actively collecting feedback on:
+- Usability
+- Bugs or crashes
+- Missing features
+- Cool ideas
+
+Feel free to open an [issue](https://github.com/YOUR_USERNAME/ai-workspace/issues), submit a pull request, or reach out directly.
+
+---
+
+## 📄 License
+
+MIT License – see [LICENSE](LICENSE) for details.
